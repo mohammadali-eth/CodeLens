@@ -10,8 +10,27 @@ spring:
   threads:
     virtual:
       enabled: true
+  
+  # Enterprise Spring Data JPA & Hibernate Configuration
   jpa:
     open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+          batch_size: 25
+        order_inserts: true
+        order_updates: true
+        generate_statistics: false
+
+  # Enterprise Flyway Migration Strategy
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    baseline-version: 0
+    locations: classpath:db/migration
+    validate-on-migrate: true
+    out-of-order: false
 
 server:
   port: 8080

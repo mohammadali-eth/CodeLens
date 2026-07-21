@@ -9,21 +9,27 @@ spring:
     password: ${DB_PASS:root}
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
-      maximum-pool-size: 10
+      maximum-pool-size: 15
       minimum-idle: 5
       idle-timeout: 300000
       connection-timeout: 20000
+      max-lifetime: 1800000
       pool-name: CodeLens-HikariPool-Dev
+      transaction-isolation: TRANSACTION_READ_COMMITTED
 
   jpa:
     database-platform: org.hibernate.dialect.MySQLDialect
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     show-sql: true
     properties:
       hibernate:
         format_sql: true
         use_sql_comments: true
+
+  flyway:
+    enabled: true
+    clean-disabled: true
 
   thymeleaf:
     cache: false
@@ -35,4 +41,6 @@ logging:
     root: INFO
     com.codelens: DEBUG
     org.hibernate.SQL: DEBUG
-    org.springframework.security: DEBUG
+    org.flywaydb: INFO
+    org.springframework.orm.jpa: DEBUG
+    org.springframework.transaction: DEBUG
