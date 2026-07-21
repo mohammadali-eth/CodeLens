@@ -109,6 +109,13 @@
             <optional>true</optional>
         </dependency>
 
+        <!-- H2 Database Engine (Test Scope for Isolated Spring Boot Integration Tests) -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
+
         <!-- Spring Boot Test Starter (JUnit 5, Mockito, AssertJ) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

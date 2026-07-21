@@ -8,7 +8,7 @@ import org.springframework.test.context.ActiveProfiles;
  * Enterprise Integration Test verifying Spring Boot application context load.
  */
 @SpringBootTest
-@ActiveProfiles("dev")
+@ActiveProfiles("test")
 class CodeLensApplicationTests {
 
     @Test
