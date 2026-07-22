@@ -10,6 +10,7 @@ import java.util.Optional;
 @Repository
 public interface CodeRepositoryRepository extends JpaRepository<CodeRepository, Long> {
     List<CodeRepository> findByOwnerUsername(String username);
+    long countByOwnerUsername(String username);
     Optional<CodeRepository> findByIdAndOwnerUsername(Long id, String username);
     boolean existsByNameAndOwnerId(String name, Long ownerId);
     boolean existsByNameAndOwnerUsername(String name, String username);
