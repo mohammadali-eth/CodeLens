@@ -9,6 +9,9 @@ import com.codelens.repository.UserProfileRepository;
 import com.codelens.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.codelens.config.CacheConfig;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +33,7 @@ public class UserProfileServiceImpl implements IUserProfileService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = CacheConfig.CACHE_USER_PROFILES, key = "#username")
     public UserProfileResponseRecord getUserProfileByUsername(String username) {
         log.debug("Fetching user profile for username: {}", username);
 
@@ -62,6 +66,7 @@ public class UserProfileServiceImpl implements IUserProfileService {
 
     @Override
     @Transactional
+    @CacheEvict(value = CacheConfig.CACHE_USER_PROFILES, key = "#username")
     public UserProfileResponseRecord updateUserProfile(String username, UpdateProfileRequestRecord updateRequest) {
         log.info("Updating user profile for username: {}", username);
 
