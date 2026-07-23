@@ -18,3 +18,9 @@ target/
 # OS Files
 .DS_Store
 Thumbs.db
+
+# Blockchain build files and node dependencies
+blockchain/node_modules/
+blockchain/artifacts/
+blockchain/cache/
+
