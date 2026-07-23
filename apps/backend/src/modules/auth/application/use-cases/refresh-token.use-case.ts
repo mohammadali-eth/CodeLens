@@ -27,18 +27,24 @@ export class RefreshTokenUseCase {
   ) {}
 
   async execute(refreshTokenString: string): Promise<RefreshTokenResponse> {
-    const payload = await this.tokenService.verifyRefreshToken(refreshTokenString);
+    const payload =
+      await this.tokenService.verifyRefreshToken(refreshTokenString);
     if (!payload) {
-      throw new UnauthorizedException('Invalid or expired refresh token signature');
+      throw new UnauthorizedException(
+        'Invalid or expired refresh token signature',
+      );
     }
 
-    const dbToken = await this.refreshTokenRepository.findByToken(refreshTokenString);
+    const dbToken =
+      await this.refreshTokenRepository.findByToken(refreshTokenString);
 
     // SECURITY BREACH DETECTION: Revoking token presented again!
     if (dbToken && dbToken.isRevoked) {
       // Token Reuse Attack Detected! Invalidate ALL sessions in this token family
       await this.refreshTokenRepository.revokeFamily(dbToken.family);
-      throw new UnauthorizedException('Security Alert: Refresh token reuse detected. Session invalidated.');
+      throw new UnauthorizedException(
+        'Security Alert: Refresh token reuse detected. Session invalidated.',
+      );
     }
 
     if (!dbToken || !dbToken.isValid()) {
@@ -47,14 +53,19 @@ export class RefreshTokenUseCase {
 
     const user = await this.userRepository.findById(dbToken.userId);
     if (!user || !user.canAuthenticate()) {
-      throw new UnauthorizedException('User account associated with token is inactive');
+      throw new UnauthorizedException(
+        'User account associated with token is inactive',
+      );
     }
 
     // Revoke old refresh token (Single-use token rotation)
     await this.refreshTokenRepository.revokeToken(dbToken.id);
 
     // Generate new Token Pair with the SAME Token Family
-    const newTokenPair = await this.tokenService.generateTokenPair(user, dbToken.family);
+    const newTokenPair = await this.tokenService.generateTokenPair(
+      user,
+      dbToken.family,
+    );
 
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);

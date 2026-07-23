@@ -4,14 +4,22 @@ import { IChatRepository } from '../../application/ports/chat-repository.interfa
 import { ChatSession } from '../../domain/chat-session.entity';
 import { ChatMessage } from '../../domain/chat-message.entity';
 import { MessageRole } from '../../domain/message-role.enum';
+import {
+  ChatSession as DbChatSession,
+  ChatMessage as DbChatMessage,
+} from '@prisma/client';
+
+type FullDbChatSession = DbChatSession & {
+  messages: DbChatMessage[];
+};
 
 @Injectable()
 export class PrismaChatRepository implements IChatRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  private mapSessionToDomain(dbSession: any): ChatSession {
+  private mapSessionToDomain(dbSession: FullDbChatSession): ChatSession {
     const messages = (dbSession.messages || []).map(
-      (m: any) =>
+      (m: DbChatMessage) =>
         new ChatMessage(
           m.id,
           m.sessionId,
@@ -40,11 +48,12 @@ export class PrismaChatRepository implements IChatRepository {
         },
       },
     });
+
     return dbSession ? this.mapSessionToDomain(dbSession) : null;
   }
 
   async findSessionsByUserId(userId: string): Promise<ChatSession[]> {
-    const dbSessions = await this.prisma.chatSession.findMany({
+    const dbSessions = (await this.prisma.chatSession.findMany({
       where: { userId },
       orderBy: { updatedAt: 'desc' },
       include: {
@@ -52,7 +61,8 @@ export class PrismaChatRepository implements IChatRepository {
           orderBy: { createdAt: 'asc' },
         },
       },
-    });
+    })) as FullDbChatSession[];
+
     return dbSessions.map((s) => this.mapSessionToDomain(s));
   }
 
@@ -67,6 +77,7 @@ export class PrismaChatRepository implements IChatRepository {
         messages: true,
       },
     });
+
     return this.mapSessionToDomain(dbSession);
   }
 
@@ -79,6 +90,7 @@ export class PrismaChatRepository implements IChatRepository {
         content: message.content,
       },
     });
+
     return new ChatMessage(
       dbMessage.id,
       dbMessage.sessionId,

@@ -21,7 +21,9 @@ export class AdminSoftDeleteUserUseCase {
   async execute(targetUserId: string): Promise<UserProfile> {
     const user = await this.userRepository.findById(targetUserId);
     if (!user) {
-      throw new NotFoundException(`User with ID "${targetUserId}" was not found`);
+      throw new NotFoundException(
+        `User with ID "${targetUserId}" was not found`,
+      );
     }
 
     const deletedUser = user.softDelete();

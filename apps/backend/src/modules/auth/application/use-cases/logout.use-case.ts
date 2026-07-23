@@ -14,9 +14,13 @@ export class LogoutUseCase {
     private readonly refreshTokenRepository: IRefreshTokenRepository,
   ) {}
 
-  async execute(refreshTokenString?: string, userId?: string): Promise<{ success: boolean }> {
+  async execute(
+    refreshTokenString?: string,
+    userId?: string,
+  ): Promise<{ success: boolean }> {
     if (refreshTokenString) {
-      const dbToken = await this.refreshTokenRepository.findByToken(refreshTokenString);
+      const dbToken =
+        await this.refreshTokenRepository.findByToken(refreshTokenString);
       if (dbToken) {
         await this.refreshTokenRepository.revokeToken(dbToken.id);
       }

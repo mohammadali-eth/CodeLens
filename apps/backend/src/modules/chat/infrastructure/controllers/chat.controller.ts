@@ -1,9 +1,17 @@
-import { Controller, Post, Get, Param, Query, Body, UseGuards, Request } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Param,
+  Body,
+  UseGuards,
+  Inject,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../../../auth/infrastructure/guards/jwt-auth.guard';
+import { CurrentUser } from '../../../auth/infrastructure/decorators/current-user.decorator';
 import { CreateChatSessionUseCase } from '../../application/use-cases/create-chat-session.use-case';
 import { SendChatMessageUseCase } from '../../application/use-cases/send-chat-message.use-case';
 import { IChatRepository } from '../../application/ports/chat-repository.interface';
-import { Inject } from '@nestjs/common';
 
 class SendMessageDto {
   prompt!: string;
@@ -25,14 +33,15 @@ export class ChatController {
   ) {}
 
   @Post('sessions')
-  async createSession(@Body() dto: CreateSessionDto, @Request() req: any) {
-    const userId = req.user.sub;
+  async createSession(
+    @CurrentUser('sub') userId: string,
+    @Body() dto: CreateSessionDto,
+  ) {
     return this.createChatSessionUseCase.execute(userId, dto.title);
   }
 
   @Get('sessions')
-  async listSessions(@Request() req: any) {
-    const userId = req.user.sub;
+  async listSessions(@CurrentUser('sub') userId: string) {
     return this.chatRepository.findSessionsByUserId(userId);
   }
 
@@ -46,6 +55,10 @@ export class ChatController {
     @Param('id') sessionId: string,
     @Body() dto: SendMessageDto,
   ) {
-    return this.sendChatMessageUseCase.execute(sessionId, dto.prompt, dto.provider);
+    return this.sendChatMessageUseCase.execute(
+      sessionId,
+      dto.prompt,
+      dto.provider,
+    );
   }
 }

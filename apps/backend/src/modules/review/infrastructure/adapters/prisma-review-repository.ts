@@ -1,51 +1,87 @@
 import { Injectable } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 import { PrismaService } from '../../../database/prisma.service';
 import { IReviewRepository } from '../../application/ports/review-repository.interface';
 import { Review } from '../../domain/review.entity';
-import { CodeFile } from '../../domain/code-file.entity';
-import { Issue } from '../../domain/issue.entity';
+import { ReviewFile, CodeIssue } from '../../domain/review-file.entity';
 import { ReviewStatus } from '../../domain/review-status.enum';
 import { Severity } from '../../domain/severity.enum';
+import {
+  ProgrammingLanguage,
+  Review as DbReview,
+  ReviewFile as DbReviewFile,
+  Issue as DbIssue,
+} from '@prisma/client';
 
+type FullDbReviewFile = DbReviewFile & {
+  issues: DbIssue[];
+};
+
+type FullDbReview = DbReview & {
+  files: FullDbReviewFile[];
+};
+
+/**
+ * PrismaReviewRepository Adapter
+ * Purpose: Infrastructure adapter mapping Review domain aggregate to PostgreSQL via Prisma ORM.
+ * Responsibilities: Performs CRUD queries, pagination, soft deletes, and user favorite operations.
+ * Dependencies: PrismaService, IReviewRepository interface, Review & ReviewFile domain entities.
+ */
 @Injectable()
 export class PrismaReviewRepository implements IReviewRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  private mapToDomain(dbReview: any): Review {
-    const files = (dbReview.files || []).map((dbFile: any) => {
-      const issues = (dbFile.issues || []).map(
-        (dbIssue: any) =>
-          new Issue(
-            dbIssue.id,
-            dbIssue.fileId,
-            dbIssue.line,
-            dbIssue.severity as Severity,
-            dbIssue.type,
-            dbIssue.message,
-            dbIssue.suggestion,
-          ),
+  private mapToDomain(dbReview: FullDbReview): Review {
+    const files = (dbReview.files || []).map((dbFile: FullDbReviewFile) => {
+      const issues: CodeIssue[] = (dbFile.issues || []).map(
+        (dbIssue: DbIssue) => ({
+          id: dbIssue.id,
+          line: dbIssue.line,
+          severity: dbIssue.severity as Severity,
+          category: dbIssue.category || 'GENERAL',
+          message: dbIssue.message,
+          suggestion: dbIssue.suggestion,
+          createdAt: dbIssue.createdAt,
+        }),
       );
-      return new CodeFile(
+
+      return new ReviewFile(
         dbFile.id,
         dbFile.reviewId,
         dbFile.filename,
         dbFile.content,
         dbFile.language,
+        dbFile.fileSize || 0,
+        dbFile.storagePath || null,
+        dbFile.improvedCode || null,
         issues,
+        dbFile.createdAt,
+        dbFile.updatedAt,
       );
     });
 
     return new Review(
       dbReview.id,
       dbReview.title,
-      dbReview.repository,
-      dbReview.branch,
+      dbReview.description || null,
+      dbReview.repository || null,
+      dbReview.branch || null,
       dbReview.status as ReviewStatus,
-      dbReview.score,
+      dbReview.score || null,
+      dbReview.summary || null,
+      dbReview.timeComplexity || null,
+      dbReview.spaceComplexity || null,
+      dbReview.aiProvider || 'gemini',
+      dbReview.aiModel || null,
+      dbReview.processingTimeMs || null,
       dbReview.creatorId,
+      dbReview.parentReviewId || null,
+      dbReview.chatSessionId || null,
+      dbReview.workspaceId || null,
       files,
       dbReview.createdAt,
       dbReview.updatedAt,
+      dbReview.deletedAt || null,
     );
   }
 
@@ -60,17 +96,18 @@ export class PrismaReviewRepository implements IReviewRepository {
         },
       },
     });
-    return dbReview ? this.mapToDomain(dbReview) : null;
+
+    return dbReview && !dbReview.deletedAt ? this.mapToDomain(dbReview) : null;
   }
 
   async findByCreatorId(
     creatorId: string,
-    skip: number,
-    take: number,
+    skip = 0,
+    take = 20,
   ): Promise<{ reviews: Review[]; total: number }> {
     const [dbReviews, total] = await Promise.all([
       this.prisma.review.findMany({
-        where: { creatorId },
+        where: { creatorId, deletedAt: null },
         skip,
         take,
         orderBy: { createdAt: 'desc' },
@@ -82,11 +119,11 @@ export class PrismaReviewRepository implements IReviewRepository {
           },
         },
       }),
-      this.prisma.review.count({ where: { creatorId } }),
+      this.prisma.review.count({ where: { creatorId, deletedAt: null } }),
     ]);
 
     return {
-      reviews: dbReviews.map((r) => this.mapToDomain(r)),
+      reviews: (dbReviews as FullDbReview[]).map((r) => this.mapToDomain(r)),
       total,
     };
   }
@@ -96,23 +133,37 @@ export class PrismaReviewRepository implements IReviewRepository {
       data: {
         id: review.id,
         title: review.title,
+        description: review.description,
         repository: review.repository,
         branch: review.branch,
         status: review.status,
         score: review.score,
+        summary: review.summary,
+        timeComplexity: review.timeComplexity,
+        spaceComplexity: review.spaceComplexity,
+        aiProvider: review.aiProvider,
+        aiModel: review.aiModel,
+        processingTimeMs: review.processingTimeMs,
         creatorId: review.creatorId,
+        parentReviewId: review.parentReviewId,
+        workspaceId: review.workspaceId,
         files: {
           create: review.files.map((file) => ({
             id: file.id,
             filename: file.filename,
             content: file.content,
-            language: file.language,
+            language: (file.language in ProgrammingLanguage
+              ? file.language
+              : 'TYPESCRIPT') as ProgrammingLanguage,
+            fileSize: file.fileSize,
+            storagePath: file.storagePath,
+            improvedCode: file.improvedCode,
             issues: {
               create: file.issues.map((issue) => ({
-                id: issue.id,
+                id: issue.id || randomUUID(),
                 line: issue.line,
                 severity: issue.severity,
-                type: issue.type,
+                category: issue.category || 'GENERAL',
                 message: issue.message,
                 suggestion: issue.suggestion,
               })),
@@ -138,6 +189,12 @@ export class PrismaReviewRepository implements IReviewRepository {
       data: {
         status: review.status,
         score: review.score,
+        summary: review.summary,
+        timeComplexity: review.timeComplexity,
+        spaceComplexity: review.spaceComplexity,
+        processingTimeMs: review.processingTimeMs,
+        aiModel: review.aiModel,
+        deletedAt: review.deletedAt,
       },
       include: {
         files: {
@@ -147,6 +204,43 @@ export class PrismaReviewRepository implements IReviewRepository {
         },
       },
     });
+
     return this.mapToDomain(dbReview);
+  }
+
+  async delete(id: string): Promise<void> {
+    await this.prisma.review.update({
+      where: { id },
+      data: {
+        deletedAt: new Date(),
+        status: ReviewStatus.CANCELLED,
+      },
+    });
+  }
+
+  async favorite(userId: string, reviewId: string): Promise<void> {
+    await this.prisma.favoriteReview.upsert({
+      where: {
+        userId_reviewId: { userId, reviewId },
+      },
+      create: {
+        userId,
+        reviewId,
+      },
+      update: {},
+    });
+  }
+
+  async unfavorite(userId: string, reviewId: string): Promise<void> {
+    await this.prisma.favoriteReview.deleteMany({
+      where: { userId, reviewId },
+    });
+  }
+
+  async isFavorited(userId: string, reviewId: string): Promise<boolean> {
+    const count = await this.prisma.favoriteReview.count({
+      where: { userId, reviewId },
+    });
+    return count > 0;
   }
 }

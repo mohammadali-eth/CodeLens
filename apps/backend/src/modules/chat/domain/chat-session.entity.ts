@@ -25,11 +25,7 @@ export class ChatSession {
     );
   }
 
-  public static create(
-    id: string,
-    userId: string,
-    title: string,
-  ): ChatSession {
+  public static create(id: string, userId: string, title: string): ChatSession {
     return new ChatSession(id, userId, title, [], new Date(), new Date());
   }
 }

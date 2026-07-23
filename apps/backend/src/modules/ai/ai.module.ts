@@ -5,6 +5,7 @@ import { AISanitizerService } from './infrastructure/sanitizer/ai-sanitizer.serv
 import { GeminiService } from './infrastructure/adapters/gemini.service';
 import { OpenAIService } from './infrastructure/adapters/openai.service';
 import { OllamaService } from './infrastructure/adapters/ollama.service';
+import { MockAIService } from './infrastructure/adapters/mock-ai.service';
 import { AIFactoryService } from './application/ai-factory.service';
 import { AnalyzeCodeReviewUseCase } from './application/use-cases/analyze-code-review.use-case';
 import { AIController } from './infrastructure/controllers/ai.controller';
@@ -17,13 +18,10 @@ import { AIController } from './infrastructure/controllers/ai.controller';
     GeminiService,
     OpenAIService,
     OllamaService,
+    MockAIService,
     AIFactoryService,
     AnalyzeCodeReviewUseCase,
   ],
-  exports: [
-    AIFactoryService,
-    AnalyzeCodeReviewUseCase,
-    AISanitizerService,
-  ],
+  exports: [AIFactoryService, AnalyzeCodeReviewUseCase, AISanitizerService],
 })
 export class AIModule {}

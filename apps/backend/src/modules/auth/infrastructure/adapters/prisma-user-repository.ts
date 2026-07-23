@@ -4,12 +4,13 @@ import { User } from '../../domain/user.entity';
 import { UserRole } from '../../domain/user-role.enum';
 import { UserStatus } from '../../domain/user-status.enum';
 import { IUserRepository } from '../../application/ports/user-repository.interface';
+import { User as DbUser } from '@prisma/client';
 
 @Injectable()
 export class PrismaUserRepository implements IUserRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  private mapToDomain(dbUser: any): User {
+  private mapToDomain(dbUser: DbUser): User {
     return new User(
       dbUser.id,
       dbUser.email,
@@ -37,7 +38,10 @@ export class PrismaUserRepository implements IUserRepository {
     return dbUser ? this.mapToDomain(dbUser) : null;
   }
 
-  async findAll(options?: { skip?: number; take?: number }): Promise<{ users: User[]; total: number }> {
+  async findAll(options?: {
+    skip?: number;
+    take?: number;
+  }): Promise<{ users: User[]; total: number }> {
     const skip = options?.skip || 0;
     const take = options?.take || 20;
 

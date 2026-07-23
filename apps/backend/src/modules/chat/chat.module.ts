@@ -18,10 +18,6 @@ import { ChatController } from './infrastructure/controllers/chat.controller';
       useClass: PrismaChatRepository,
     },
   ],
-  exports: [
-    CreateChatSessionUseCase,
-    SendChatMessageUseCase,
-    IChatRepository,
-  ],
+  exports: [CreateChatSessionUseCase, SendChatMessageUseCase, IChatRepository],
 })
 export class ChatModule {}

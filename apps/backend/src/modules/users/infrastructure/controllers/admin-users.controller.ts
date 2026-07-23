@@ -1,4 +1,15 @@
-import { Controller, Get, Patch, Delete, Param, Query, Body, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Patch,
+  Delete,
+  Param,
+  Query,
+  Body,
+  UseGuards,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../../../auth/infrastructure/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../auth/infrastructure/guards/roles.guard';
 import { Roles } from '../../../auth/infrastructure/decorators/roles.decorator';
@@ -27,10 +38,7 @@ export class AdminUsersController {
   ) {}
 
   @Get()
-  async listUsers(
-    @Query('skip') skip?: string,
-    @Query('take') take?: string,
-  ) {
+  async listUsers(@Query('skip') skip?: string, @Query('take') take?: string) {
     const skipNum = skip ? parseInt(skip, 10) : 0;
     const takeNum = take ? parseInt(take, 10) : 20;
     return this.adminListUsersUseCase.execute(skipNum, takeNum);

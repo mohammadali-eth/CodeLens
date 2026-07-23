@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../database/prisma.service';
 import { IRefreshTokenRepository } from '../../application/ports/refresh-token-repository.interface';
 import { RefreshToken } from '../../domain/refresh-token.entity';
+import { RefreshToken as DbRefreshToken } from '@prisma/client';
 
 /**
  * PrismaRefreshTokenRepository Adapter
@@ -13,7 +14,7 @@ import { RefreshToken } from '../../domain/refresh-token.entity';
 export class PrismaRefreshTokenRepository implements IRefreshTokenRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  private mapToDomain(dbToken: any): RefreshToken {
+  private mapToDomain(dbToken: DbRefreshToken): RefreshToken {
     return new RefreshToken(
       dbToken.id,
       dbToken.token,

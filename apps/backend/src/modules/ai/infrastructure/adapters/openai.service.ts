@@ -1,7 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { IAIEngineService } from '../../domain/ai-engine-service.interface';
+import {
+  IAIEngineService,
+  CodeFilePayload,
+} from '../../domain/ai-engine-service.interface';
 import { AIAnalysisResult } from '../../domain/ai-analysis-result.interface';
-import { CodeFile } from '../../../review/domain/code-file.entity';
 import { AISanitizerService } from '../sanitizer/ai-sanitizer.service';
 import { Severity } from '../../../review/domain/severity.enum';
 
@@ -12,8 +14,10 @@ export class OpenAIService implements IAIEngineService {
 
   constructor(private readonly sanitizerService: AISanitizerService) {}
 
-  async analyzeCode(files: CodeFile[]): Promise<AIAnalysisResult> {
-    this.logger.log(`Analyzing ${files.length} code file(s) via OpenAI API Engine`);
+  analyzeCode(files: CodeFilePayload[]): Promise<AIAnalysisResult> {
+    this.logger.log(
+      `Analyzing ${files.length} code file(s) via OpenAI API Engine`,
+    );
 
     const sanitizedFiles = files.map((f) => ({
       filename: f.filename,
@@ -29,16 +33,17 @@ export class OpenAIService implements IAIEngineService {
           severity: Severity.LOW,
           type: 'STYLE',
           message: 'Use of legacy "var" keyword. Prefer "const" or "let".',
-          suggestion: 'Replace "var" declarations with block-scoped "const" or "let".',
+          suggestion:
+            'Replace "var" declarations with block-scoped "const" or "let".',
         });
       }
       return generatedIssues;
     });
 
-    return {
+    return Promise.resolve({
       summary: `OpenAI Scan: Analyzed ${files.length} file(s). Found ${issues.length} potential improvements.`,
       issues,
       providerUsed: this.providerName,
-    };
+    });
   }
 }

@@ -1,5 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { ICodeParserService, ParsedCodeMetadata } from '../../application/ports/code-parser.interface';
+import {
+  ICodeParserService,
+  ParsedCodeMetadata,
+} from '../../application/ports/code-parser.interface';
 
 @Injectable()
 export class SimpleCodeParserService implements ICodeParserService {

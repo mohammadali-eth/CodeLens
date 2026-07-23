@@ -33,16 +33,23 @@ export class LoginUseCase {
   ) {}
 
   async execute(dto: LoginDto): Promise<LoginResponse> {
-    const user = await this.userRepository.findByEmail(dto.email.toLowerCase().trim());
+    const user = await this.userRepository.findByEmail(
+      dto.email.toLowerCase().trim(),
+    );
     if (!user) {
       throw new UnauthorizedException('Invalid email or password credentials');
     }
 
     if (!user.canAuthenticate()) {
-      throw new UnauthorizedException(`Account is ${user.status}. Please contact system support.`);
+      throw new UnauthorizedException(
+        `Account is ${user.status}. Please contact system support.`,
+      );
     }
 
-    const isPasswordValid = await this.passwordHasher.compare(dto.password, user.passwordHash);
+    const isPasswordValid = await this.passwordHasher.compare(
+      dto.password,
+      user.passwordHash,
+    );
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid email or password credentials');
     }

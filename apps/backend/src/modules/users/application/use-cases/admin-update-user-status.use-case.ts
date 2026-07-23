@@ -20,16 +20,25 @@ export class AdminUpdateUserStatusUseCase {
     private readonly refreshTokenRepository: IRefreshTokenRepository,
   ) {}
 
-  async execute(targetUserId: string, dto: UpdateUserStatusDto): Promise<UserProfile> {
+  async execute(
+    targetUserId: string,
+    dto: UpdateUserStatusDto,
+  ): Promise<UserProfile> {
     const user = await this.userRepository.findById(targetUserId);
     if (!user) {
-      throw new NotFoundException(`User with ID "${targetUserId}" was not found`);
+      throw new NotFoundException(
+        `User with ID "${targetUserId}" was not found`,
+      );
     }
 
     const updatedUser = user.updateStatus(dto.status);
     const savedUser = await this.userRepository.save(updatedUser);
 
-    if (dto.status === UserStatus.SUSPENDED || dto.status === UserStatus.DELETED || dto.status === UserStatus.INACTIVE) {
+    if (
+      dto.status === UserStatus.SUSPENDED ||
+      dto.status === UserStatus.DELETED ||
+      dto.status === UserStatus.INACTIVE
+    ) {
       await this.refreshTokenRepository.revokeAllUserTokens(targetUserId);
     }
 

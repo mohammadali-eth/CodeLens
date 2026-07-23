@@ -23,9 +23,10 @@ export class RegisterUseCase {
     const passwordHash = await this.passwordHasher.hash(dto.password);
     const id = crypto.randomUUID();
 
-    const userRole = dto.role && Object.values(UserRole).includes(dto.role as UserRole)
-      ? (dto.role as UserRole)
-      : UserRole.USER;
+    const userRole =
+      dto.role && Object.values(UserRole).includes(dto.role as UserRole)
+        ? (dto.role as UserRole)
+        : UserRole.USER;
 
     const user = User.create(
       id,

@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { ITokenService, JwtPayload, TokenPair } from '../../application/ports/token-service.interface';
+import {
+  ITokenService,
+  JwtPayload,
+  TokenPair,
+} from '../../application/ports/token-service.interface';
 import { User } from '../../domain/user.entity';
 
 /**
@@ -16,7 +20,9 @@ export class JwtTokenService implements ITokenService {
   private readonly refreshTtl = '7d';
 
   constructor(private readonly jwtService: JwtService) {
-    this.jwtSecret = process.env.JWT_SECRET || 'super-secret-key-for-codelens-platform-enterprise-version';
+    this.jwtSecret =
+      process.env.JWT_SECRET ||
+      'super-secret-key-for-codelens-platform-enterprise-version';
   }
 
   async generateAccessToken(user: User): Promise<string> {
@@ -48,7 +54,10 @@ export class JwtTokenService implements ITokenService {
     });
   }
 
-  async generateTokenPair(user: User, existingFamily?: string): Promise<TokenPair> {
+  async generateTokenPair(
+    user: User,
+    existingFamily?: string,
+  ): Promise<TokenPair> {
     const family = existingFamily || crypto.randomUUID();
     const accessToken = await this.generateAccessToken(user);
     const refreshToken = await this.generateRefreshToken(user, family);

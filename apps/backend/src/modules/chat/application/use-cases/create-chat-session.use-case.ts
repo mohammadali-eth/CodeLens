@@ -10,8 +10,13 @@ export class CreateChatSessionUseCase {
   ) {}
 
   async execute(userId: string, title?: string): Promise<ChatSession> {
-    const sessionTitle = title || `AI Code Assistant - ${new Date().toLocaleDateString()}`;
-    const session = ChatSession.create(crypto.randomUUID(), userId, sessionTitle);
+    const sessionTitle =
+      title || `AI Code Assistant - ${new Date().toLocaleDateString()}`;
+    const session = ChatSession.create(
+      crypto.randomUUID(),
+      userId,
+      sessionTitle,
+    );
     return this.chatRepository.saveSession(session);
   }
 }

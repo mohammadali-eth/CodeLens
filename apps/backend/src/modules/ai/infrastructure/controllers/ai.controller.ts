@@ -5,7 +5,9 @@ import { AnalyzeCodeReviewUseCase } from '../../application/use-cases/analyze-co
 @Controller('ai')
 @UseGuards(JwtAuthGuard)
 export class AIController {
-  constructor(private readonly analyzeCodeReviewUseCase: AnalyzeCodeReviewUseCase) {}
+  constructor(
+    private readonly analyzeCodeReviewUseCase: AnalyzeCodeReviewUseCase,
+  ) {}
 
   @Post('analyze/:reviewId')
   async analyze(

@@ -1,4 +1,12 @@
-import { Controller, Get, Patch, Body, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Patch,
+  Body,
+  UseGuards,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../../../auth/infrastructure/guards/jwt-auth.guard';
 import { CurrentUser } from '../../../auth/infrastructure/decorators/current-user.decorator';
 import { GetUserProfileUseCase } from '../../application/use-cases/get-user-profile.use-case';

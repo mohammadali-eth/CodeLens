@@ -23,7 +23,9 @@ import { RolesGuard } from './infrastructure/guards/roles.guard';
     DatabaseModule,
     PassportModule,
     JwtModule.register({
-      secret: process.env.JWT_SECRET || 'super-secret-key-for-codelens-platform-enterprise-version',
+      secret:
+        process.env.JWT_SECRET ||
+        'super-secret-key-for-codelens-platform-enterprise-version',
       signOptions: { expiresIn: '15m' },
     }),
   ],

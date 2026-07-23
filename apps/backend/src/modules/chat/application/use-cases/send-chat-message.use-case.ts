@@ -4,7 +4,6 @@ import { AISanitizerService } from '../../../ai/infrastructure/sanitizer/ai-sani
 import { AIFactoryService } from '../../../ai/application/ai-factory.service';
 import { ChatMessage } from '../../domain/chat-message.entity';
 import { MessageRole } from '../../domain/message-role.enum';
-import { CodeFile } from '../../../review/domain/code-file.entity';
 
 @Injectable()
 export class SendChatMessageUseCase {
@@ -15,10 +14,16 @@ export class SendChatMessageUseCase {
     private readonly aiFactoryService: AIFactoryService,
   ) {}
 
-  async execute(sessionId: string, prompt: string, providerChoice?: string): Promise<ChatMessage> {
+  async execute(
+    sessionId: string,
+    prompt: string,
+    providerChoice?: string,
+  ): Promise<ChatMessage> {
     const session = await this.chatRepository.findSessionById(sessionId);
     if (!session) {
-      throw new NotFoundException(`Chat session with ID "${sessionId}" was not found`);
+      throw new NotFoundException(
+        `Chat session with ID "${sessionId}" was not found`,
+      );
     }
 
     const sanitizedPrompt = this.sanitizerService.sanitize(prompt);
@@ -34,18 +39,19 @@ export class SendChatMessageUseCase {
 
     // Invoke selected AI Engine Strategy
     const aiProvider = this.aiFactoryService.getProvider(providerChoice);
-    const virtualCodeFile = CodeFile.create(
-      crypto.randomUUID(),
-      'chat-file-context',
-      'chat-prompt.txt',
-      sanitizedPrompt,
-      'plaintext',
-    );
-
-    const aiResult = await aiProvider.analyzeCode([virtualCodeFile]);
-    const responseContent = `[${aiProvider.providerName.toUpperCase()}] ${aiResult.summary}\n\nKey Insights:\n` +
+    const aiResult = await aiProvider.analyzeCode([
+      {
+        filename: 'chat-prompt.txt',
+        content: sanitizedPrompt,
+        language: 'PLAINTEXT',
+      },
+    ]);
+    const responseContent =
+      `[${aiProvider.providerName.toUpperCase()}] ${aiResult.summary}\n\nKey Insights:\n` +
       (aiResult.issues.length > 0
-        ? aiResult.issues.map((i: any) => `- ${i.message}`).join('\n')
+        ? aiResult.issues
+            .map((i: { message: string }) => `- ${i.message}`)
+            .join('\n')
         : 'Code structure looks clean with no immediate security or quality concerns flagged.');
 
     // Save assistant message

@@ -38,7 +38,8 @@ export class User {
 
   public canAuthenticate(): boolean {
     return (
-      (this.status === UserStatus.ACTIVE || this.status === UserStatus.PENDING_VERIFICATION) &&
+      (this.status === UserStatus.ACTIVE ||
+        this.status === UserStatus.PENDING_VERIFICATION) &&
       !this.deletedAt
     );
   }

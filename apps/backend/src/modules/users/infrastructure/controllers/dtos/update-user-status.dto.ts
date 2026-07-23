@@ -8,7 +8,10 @@ import { UserStatus } from '../../../../auth/domain/user-status.enum';
  * Dependencies: class-validator, UserStatus.
  */
 export class UpdateUserStatusDto {
-  @IsEnum(UserStatus, { message: 'Status must be ACTIVE, INACTIVE, PENDING_VERIFICATION, SUSPENDED, or DELETED' })
+  @IsEnum(UserStatus, {
+    message:
+      'Status must be ACTIVE, INACTIVE, PENDING_VERIFICATION, SUSPENDED, or DELETED',
+  })
   @IsNotEmpty({ message: 'Status is required' })
   status!: UserStatus;
 }

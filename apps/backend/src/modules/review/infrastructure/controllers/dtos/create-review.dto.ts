@@ -1,4 +1,11 @@
-import { IsString, MinLength, IsOptional, IsArray, ValidateNested, ArrayMinSize } from 'class-validator';
+import {
+  IsString,
+  MinLength,
+  IsOptional,
+  IsArray,
+  ValidateNested,
+  ArrayMinSize,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateCodeFileDto {
@@ -8,6 +15,10 @@ export class CreateCodeFileDto {
 
   @IsString()
   content!: string;
+
+  @IsString()
+  @IsOptional()
+  language?: string;
 }
 
 export class CreateReviewDto {
@@ -16,11 +27,20 @@ export class CreateReviewDto {
   title!: string;
 
   @IsString()
-  repository!: string;
+  @IsOptional()
+  description?: string;
+
+  @IsString()
+  @IsOptional()
+  repository?: string;
 
   @IsString()
   @IsOptional()
   branch?: string;
+
+  @IsString()
+  @IsOptional()
+  aiProvider?: string;
 
   @IsArray()
   @ArrayMinSize(1, { message: 'At least one code file is required' })

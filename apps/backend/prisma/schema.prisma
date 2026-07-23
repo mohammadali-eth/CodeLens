@@ -25,8 +25,24 @@ enum UserStatus {
 
 enum ReviewStatus {
   PENDING
+  QUEUED
+  PROCESSING
   COMPLETED
   FAILED
+  CANCELLED
+}
+
+enum ProgrammingLanguage {
+  JAVA
+  JAVASCRIPT
+  TYPESCRIPT
+  PYTHON
+  C
+  CPP
+  CSHARP
+  GO
+  RUST
+  PHP
 }
 
 enum Severity {
@@ -43,22 +59,22 @@ enum MessageRole {
 }
 
 model User {
-  id            String          @id @default(uuid())
-  email         String          @unique
-  password      String
-  name          String?
-  role          Role            @default(USER)
-  status        UserStatus      @default(PENDING_VERIFICATION)
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  deletedAt     DateTime?
-  refreshTokens RefreshToken[]
-  auditLogs     AuditLog[]
-  activities    Activity[]
-  reviews       Review[]
-  chatSessions  ChatSession[]
-  favorites     Favorite[]
-  preferences   UserPreference?
+  id              String           @id @default(uuid())
+  email           String           @unique
+  password        String
+  name            String?
+  role            Role             @default(USER)
+  status          UserStatus       @default(PENDING_VERIFICATION)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  deletedAt       DateTime?
+  refreshTokens   RefreshToken[]
+  auditLogs       AuditLog[]
+  activities      Activity[]
+  reviews         Review[]
+  favoriteReviews FavoriteReview[]
+  chatSessions    ChatSession[]
+  preferences     UserPreference?
 
   @@index([email])
   @@index([status])
@@ -83,7 +99,7 @@ model RefreshToken {
   token     String   @unique
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  family    String   // Token family UUID to detect token reuse attacks
+  family    String // Token family UUID to detect token reuse attacks
   isRevoked Boolean  @default(false)
   expiresAt DateTime
   createdAt DateTime @default(now())
@@ -99,7 +115,7 @@ model AuditLog {
   id        String   @id @default(uuid())
   userId    String?
   user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  action    String   // e.g. AUTH_REGISTER, AUTH_LOGIN, AUTH_REFRESH, AUTH_LOGOUT, USER_UPDATE, USER_CHANGE_PASSWORD, ADMIN_USER_STATUS_UPDATE, ADMIN_USER_DELETE
+  action    String // e.g. AUTH_REGISTER, AUTH_LOGIN, AUTH_REFRESH, AUTH_LOGOUT, USER_UPDATE, USER_CHANGE_PASSWORD, ADMIN_USER_STATUS_UPDATE, ADMIN_USER_DELETE
   ipAddress String?
   userAgent String?
   metadata  String?  @db.Text
@@ -112,56 +128,100 @@ model AuditLog {
 }
 
 model Review {
-  id         String       @id @default(uuid())
-  title      String
-  repository String
-  branch     String
-  status     ReviewStatus @default(PENDING)
-  score      Int?
-  creatorId  String
-  creator    User         @relation(fields: [creatorId], references: [id], onDelete: Cascade)
-  files      CodeFile[]
-  createdAt  DateTime     @default(now())
-  updatedAt  DateTime     @updatedAt
-  favorites  Favorite[]
+  id               String           @id @default(uuid())
+  title            String
+  description      String?          @db.Text
+  repository       String?
+  branch           String?
+  status           ReviewStatus     @default(PENDING)
+  score            Int?             // 0-100 Quality Score
+  summary          String?          @db.Text
+  timeComplexity   String?
+  spaceComplexity  String?
+  aiProvider       String           @default("gemini")
+  aiModel          String?
+  processingTimeMs Int?
+  creatorId        String
+  creator          User             @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  parentReviewId   String?
+  parentReview     Review?          @relation("ReviewReAnalysis", fields: [parentReviewId], references: [id], onDelete: SetNull)
+  reAnalyses       Review[]         @relation("ReviewReAnalysis")
+  chatSessionId    String?          @unique
+  chatSession      ChatSession?     @relation(fields: [chatSessionId], references: [id], onDelete: SetNull)
+  workspaceId      String?
+  files            ReviewFile[]
+  favorites        FavoriteReview[]
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  deletedAt        DateTime?
 
+  @@index([creatorId])
+  @@index([status])
+  @@index([deletedAt])
+  @@index([createdAt])
   @@map("reviews")
 }
 
-model CodeFile {
-  id       String  @id @default(uuid())
-  reviewId String
-  review   Review  @relation(fields: [reviewId], references: [id], onDelete: Cascade)
-  filename String
-  content  String  @db.Text
-  language String
-  issues   Issue[]
+model ReviewFile {
+  id            String              @id @default(uuid())
+  reviewId      String
+  review        Review              @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  filename      String
+  content       String              @db.Text
+  language      ProgrammingLanguage
+  fileSize      Int                 @default(0)
+  storagePath   String?
+  improvedCode  String?             @db.Text
+  issues        Issue[]
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
 
-  @@map("code_files")
+  @@index([reviewId])
+  @@index([language])
+  @@map("review_files")
 }
 
 model Issue {
-  id         String   @id @default(uuid())
+  id         String     @id @default(uuid())
   fileId     String
-  file       CodeFile @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  file       ReviewFile @relation(fields: [fileId], references: [id], onDelete: Cascade)
   line       Int
   severity   Severity
-  type       String   // e.g. SECURITY, COMPLEXITY, STYLE, BUG
-  message    String   @db.Text
-  suggestion String?  @db.Text
+  category   String     // e.g. SECURITY, COMPLEXITY, STYLE, BUG, PERFORMANCE
+  message    String     @db.Text
+  suggestion String?    @db.Text
+  createdAt  DateTime   @default(now())
 
+  @@index([fileId])
+  @@index([severity])
   @@map("issues")
+}
+
+model FavoriteReview {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reviewId  String
+  review    Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, reviewId])
+  @@index([userId])
+  @@index([reviewId])
+  @@map("favorite_reviews")
 }
 
 model ChatSession {
   id        String        @id @default(uuid())
   userId    String
   user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  review    Review?
   title     String
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
   messages  ChatMessage[]
 
+  @@index([userId])
   @@map("chat_sessions")
 }
 
@@ -173,19 +233,8 @@ model ChatMessage {
   content   String      @db.Text
   createdAt DateTime    @default(now())
 
+  @@index([sessionId])
   @@map("chat_messages")
-}
-
-model Favorite {
-  id        String   @id @default(uuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  reviewId  String
-  review    Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-
-  @@unique([userId, reviewId])
-  @@map("favorites")
 }
 
 model Activity {
@@ -196,5 +245,6 @@ model Activity {
   details   String?  @db.Text
   createdAt DateTime @default(now())
 
+  @@index([userId])
   @@map("activities")
 }

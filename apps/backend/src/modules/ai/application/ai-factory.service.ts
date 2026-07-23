@@ -3,6 +3,7 @@ import { IAIEngineService } from '../domain/ai-engine-service.interface';
 import { GeminiService } from '../infrastructure/adapters/gemini.service';
 import { OpenAIService } from '../infrastructure/adapters/openai.service';
 import { OllamaService } from '../infrastructure/adapters/ollama.service';
+import { MockAIService } from '../infrastructure/adapters/mock-ai.service';
 import { AIProvider } from '../domain/ai-provider.enum';
 
 @Injectable()
@@ -13,20 +14,27 @@ export class AIFactoryService {
     private readonly geminiService: GeminiService,
     private readonly openAIService: OpenAIService,
     private readonly ollamaService: OllamaService,
+    private readonly mockAIService: MockAIService,
   ) {
     this.providers = new Map<string, IAIEngineService>([
       [AIProvider.GEMINI, this.geminiService],
       [AIProvider.OPENAI, this.openAIService],
       [AIProvider.OLLAMA, this.ollamaService],
+      [AIProvider.MOCK, this.mockAIService],
     ]);
   }
 
   public getProvider(providerName?: string): IAIEngineService {
-    const selectedProvider = providerName?.toLowerCase() || process.env.DEFAULT_AI_PROVIDER || AIProvider.GEMINI;
+    const selectedProvider =
+      providerName?.toLowerCase() ||
+      process.env.DEFAULT_AI_PROVIDER ||
+      AIProvider.GEMINI;
     const service = this.providers.get(selectedProvider);
 
     if (!service) {
-      throw new BadRequestException(`Unsupported AI Provider: "${selectedProvider}". Available options: gemini, openai, ollama`);
+      throw new BadRequestException(
+        `Unsupported AI Provider: "${selectedProvider}". Available options: gemini, openai, ollama, mock`,
+      );
     }
 
     return service;

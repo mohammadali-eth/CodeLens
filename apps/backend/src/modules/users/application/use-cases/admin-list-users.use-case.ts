@@ -15,7 +15,10 @@ export class AdminListUsersUseCase {
     private readonly userRepository: IUserRepository,
   ) {}
 
-  async execute(skip = 0, take = 20): Promise<{ users: UserProfile[]; total: number }> {
+  async execute(
+    skip = 0,
+    take = 20,
+  ): Promise<{ users: UserProfile[]; total: number }> {
     const { users, total } = await this.userRepository.findAll({ skip, take });
     return {
       users: users.map((u) => UserProfile.fromUser(u)),

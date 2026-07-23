@@ -1,7 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { IAIEngineService } from '../../domain/ai-engine-service.interface';
+import {
+  IAIEngineService,
+  CodeFilePayload,
+} from '../../domain/ai-engine-service.interface';
 import { AIAnalysisResult } from '../../domain/ai-analysis-result.interface';
-import { CodeFile } from '../../../review/domain/code-file.entity';
 import { AISanitizerService } from '../sanitizer/ai-sanitizer.service';
 import { Severity } from '../../../review/domain/severity.enum';
 
@@ -12,8 +14,10 @@ export class GeminiService implements IAIEngineService {
 
   constructor(private readonly sanitizerService: AISanitizerService) {}
 
-  async analyzeCode(files: CodeFile[]): Promise<AIAnalysisResult> {
-    this.logger.log(`Analyzing ${files.length} code file(s) via Google Gemini AI Engine`);
+  analyzeCode(files: CodeFilePayload[]): Promise<AIAnalysisResult> {
+    this.logger.log(
+      `Analyzing ${files.length} code file(s) via Google Gemini AI Engine`,
+    );
 
     const sanitizedFiles = files.map((f) => ({
       filename: f.filename,
@@ -30,8 +34,10 @@ export class GeminiService implements IAIEngineService {
           line: 5,
           severity: Severity.CRITICAL,
           type: 'SECURITY',
-          message: 'Use of eval() detected. This enables arbitrary code execution.',
-          suggestion: 'Refactor code to avoid evaluating raw string expressions dynamically.',
+          message:
+            'Use of eval() detected. This enables arbitrary code execution.',
+          suggestion:
+            'Refactor code to avoid evaluating raw string expressions dynamically.',
         });
       }
       if (file.content.includes('console.log')) {
@@ -47,10 +53,10 @@ export class GeminiService implements IAIEngineService {
       return generatedIssues;
     });
 
-    return {
+    return Promise.resolve({
       summary: `Analyzed ${files.length} file(s). Found ${issues.length} potential quality/security items.`,
       issues,
       providerUsed: this.providerName,
-    };
+    });
   }
 }

@@ -11,6 +11,9 @@ export interface RawAIFileIssue {
 
 export interface AIAnalysisResult {
   summary: string;
+  score?: number;
+  timeComplexity?: string;
+  spaceComplexity?: string;
   issues: RawAIFileIssue[];
   providerUsed: string;
 }
