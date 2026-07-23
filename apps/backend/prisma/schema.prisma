@@ -136,11 +136,18 @@ model Review {
   status           ReviewStatus     @default(PENDING)
   score            Int?             // 0-100 Quality Score
   summary          String?          @db.Text
+  explanation      String?          @db.Text // AI structural code explanation
   timeComplexity   String?
   spaceComplexity  String?
   aiProvider       String           @default("gemini")
   aiModel          String?
   processingTimeMs Int?
+  confidenceScore  Float?           @default(0.95) // 0.0 to 1.0 AI confidence level
+  promptVersion    String?          @default("v1.0")
+  promptTokens     Int?             @default(0)
+  completionTokens Int?             @default(0)
+  totalTokens      Int?             @default(0)
+  rawResponse      String?          @db.Text
   creatorId        String
   creator          User             @relation(fields: [creatorId], references: [id], onDelete: Cascade)
   parentReviewId   String?
@@ -182,15 +189,16 @@ model ReviewFile {
 }
 
 model Issue {
-  id         String     @id @default(uuid())
-  fileId     String
-  file       ReviewFile @relation(fields: [fileId], references: [id], onDelete: Cascade)
-  line       Int
-  severity   Severity
-  category   String     // e.g. SECURITY, COMPLEXITY, STYLE, BUG, PERFORMANCE
-  message    String     @db.Text
-  suggestion String?    @db.Text
-  createdAt  DateTime   @default(now())
+  id              String     @id @default(uuid())
+  fileId          String
+  file            ReviewFile @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  line            Int
+  severity        Severity
+  category        String     // e.g. SECURITY, COMPLEXITY, STYLE, BUG, PERFORMANCE
+  message         String     @db.Text
+  suggestion      String?    @db.Text
+  confidenceScore Float?     @default(1.0)
+  createdAt       DateTime   @default(now())
 
   @@index([fileId])
   @@index([severity])

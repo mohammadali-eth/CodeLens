@@ -24,7 +24,7 @@ type FullDbReview = DbReview & {
 /**
  * PrismaReviewRepository Adapter
  * Purpose: Infrastructure adapter mapping Review domain aggregate to PostgreSQL via Prisma ORM.
- * Responsibilities: Performs CRUD queries, pagination, soft deletes, and user favorite operations.
+ * Responsibilities: Performs CRUD queries, pagination, soft deletes, user favorite operations, and AI token/metrics persistence.
  * Dependencies: PrismaService, IReviewRepository interface, Review & ReviewFile domain entities.
  */
 @Injectable()
@@ -79,6 +79,13 @@ export class PrismaReviewRepository implements IReviewRepository {
       dbReview.chatSessionId || null,
       dbReview.workspaceId || null,
       files,
+      dbReview.explanation || null,
+      dbReview.confidenceScore || 0.95,
+      dbReview.promptVersion || 'v1.0',
+      dbReview.promptTokens || 0,
+      dbReview.completionTokens || 0,
+      dbReview.totalTokens || 0,
+      dbReview.rawResponse || null,
       dbReview.createdAt,
       dbReview.updatedAt,
       dbReview.deletedAt || null,
@@ -139,11 +146,18 @@ export class PrismaReviewRepository implements IReviewRepository {
         status: review.status,
         score: review.score,
         summary: review.summary,
+        explanation: review.explanation,
         timeComplexity: review.timeComplexity,
         spaceComplexity: review.spaceComplexity,
         aiProvider: review.aiProvider,
         aiModel: review.aiModel,
         processingTimeMs: review.processingTimeMs,
+        confidenceScore: review.confidenceScore,
+        promptVersion: review.promptVersion,
+        promptTokens: review.promptTokens,
+        completionTokens: review.completionTokens,
+        totalTokens: review.totalTokens,
+        rawResponse: review.rawResponse,
         creatorId: review.creatorId,
         parentReviewId: review.parentReviewId,
         workspaceId: review.workspaceId,
@@ -190,10 +204,17 @@ export class PrismaReviewRepository implements IReviewRepository {
         status: review.status,
         score: review.score,
         summary: review.summary,
+        explanation: review.explanation,
         timeComplexity: review.timeComplexity,
         spaceComplexity: review.spaceComplexity,
         processingTimeMs: review.processingTimeMs,
         aiModel: review.aiModel,
+        confidenceScore: review.confidenceScore,
+        promptVersion: review.promptVersion,
+        promptTokens: review.promptTokens,
+        completionTokens: review.completionTokens,
+        totalTokens: review.totalTokens,
+        rawResponse: review.rawResponse,
         deletedAt: review.deletedAt,
       },
       include: {

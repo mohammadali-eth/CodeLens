@@ -2,13 +2,6 @@ import { ReviewStatus } from './review-status.enum';
 import { ReviewFile } from './review-file.entity';
 import { Severity } from './severity.enum';
 
-/**
- * Review Entity (Aggregate Root)
- * Purpose: Domain Aggregate representing an entire code review analysis request.
- * Responsibilities: Manages state transitions, enforces file collection rules, and computes overall quality metrics.
- * Dependencies: ReviewStatus, ReviewFile, Severity.
- * Future Extensibility: Supports re-analysis lineage tracking and workspace policy enforcement.
- */
 export class Review {
   constructor(
     public readonly id: string,
@@ -29,6 +22,13 @@ export class Review {
     public readonly chatSessionId: string | null = null,
     public readonly workspaceId: string | null = null,
     public readonly files: ReviewFile[] = [],
+    public readonly explanation: string | null = null,
+    public readonly confidenceScore: number | null = 0.95,
+    public readonly promptVersion: string | null = 'v1.0',
+    public readonly promptTokens: number | null = 0,
+    public readonly completionTokens: number | null = 0,
+    public readonly totalTokens: number | null = 0,
+    public readonly rawResponse: string | null = null,
     public readonly createdAt: Date = new Date(),
     public readonly updatedAt: Date = new Date(),
     public readonly deletedAt: Date | null = null,
@@ -76,6 +76,13 @@ export class Review {
       this.chatSessionId,
       this.workspaceId,
       this.files,
+      this.explanation,
+      this.confidenceScore,
+      this.promptVersion,
+      this.promptTokens,
+      this.completionTokens,
+      this.totalTokens,
+      this.rawResponse,
       this.createdAt,
       new Date(),
       this.deletedAt,
@@ -102,6 +109,13 @@ export class Review {
       this.chatSessionId,
       this.workspaceId,
       this.files,
+      this.explanation,
+      this.confidenceScore,
+      this.promptVersion,
+      this.promptTokens,
+      this.completionTokens,
+      this.totalTokens,
+      this.rawResponse,
       this.createdAt,
       new Date(),
       this.deletedAt,
@@ -115,7 +129,16 @@ export class Review {
     spaceComplexity: string | null,
     processingTimeMs: number,
     files: ReviewFile[],
-    aiModel?: string,
+    options?: {
+      aiModel?: string;
+      explanation?: string;
+      confidenceScore?: number;
+      promptVersion?: string;
+      promptTokens?: number;
+      completionTokens?: number;
+      totalTokens?: number;
+      rawResponse?: string;
+    },
   ): Review {
     return new Review(
       this.id,
@@ -129,13 +152,20 @@ export class Review {
       timeComplexity,
       spaceComplexity,
       this.aiProvider,
-      aiModel || this.aiModel,
+      options?.aiModel || this.aiModel,
       processingTimeMs,
       this.creatorId,
       this.parentReviewId,
       this.chatSessionId,
       this.workspaceId,
       files,
+      options?.explanation || this.explanation,
+      options?.confidenceScore ?? this.confidenceScore,
+      options?.promptVersion || this.promptVersion,
+      options?.promptTokens ?? this.promptTokens,
+      options?.completionTokens ?? this.completionTokens,
+      options?.totalTokens ?? this.totalTokens,
+      options?.rawResponse || this.rawResponse,
       this.createdAt,
       new Date(),
       this.deletedAt,
@@ -162,6 +192,13 @@ export class Review {
       this.chatSessionId,
       this.workspaceId,
       this.files,
+      this.explanation,
+      this.confidenceScore,
+      this.promptVersion,
+      this.promptTokens,
+      this.completionTokens,
+      this.totalTokens,
+      this.rawResponse,
       this.createdAt,
       new Date(),
       this.deletedAt,
@@ -188,6 +225,13 @@ export class Review {
       this.chatSessionId,
       this.workspaceId,
       this.files,
+      this.explanation,
+      this.confidenceScore,
+      this.promptVersion,
+      this.promptTokens,
+      this.completionTokens,
+      this.totalTokens,
+      this.rawResponse,
       this.createdAt,
       new Date(),
       new Date(),
@@ -238,6 +282,13 @@ export class Review {
       null,
       options?.workspaceId || null,
       files,
+      null,
+      0.95,
+      'v1.0',
+      0,
+      0,
+      0,
+      null,
       new Date(),
       new Date(),
       null,

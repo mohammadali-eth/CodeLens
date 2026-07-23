@@ -9,19 +9,59 @@ import { MockAIService } from './infrastructure/adapters/mock-ai.service';
 import { AIFactoryService } from './application/ai-factory.service';
 import { AnalyzeCodeReviewUseCase } from './application/use-cases/analyze-code-review.use-case';
 import { AIController } from './infrastructure/controllers/ai.controller';
+import { PromptTemplateRegistry } from './application/prompt-engine/prompt-template-registry';
+import { GeminiProvider } from './infrastructure/adapters/gemini-provider';
+import { OpenAIProvider } from './infrastructure/adapters/openai-provider';
+import { OllamaProvider } from './infrastructure/adapters/ollama-provider';
+import { MockProvider } from './infrastructure/adapters/mock-provider';
+import { AIProviderFactory } from './infrastructure/factories/ai-provider.factory';
+import { AIService } from './application/ai.service';
+import { AIResponseParser } from './application/response-parser/ai-response-parser';
+import { AICacheService } from './infrastructure/cache/ai-cache.service';
+import { ReviewQueueProducer } from './infrastructure/queue/review-queue.producer';
+import { ReviewQueueProcessor } from './infrastructure/queue/review-queue.processor';
+import { ReviewEventsGateway } from './infrastructure/websockets/review-events.gateway';
 
 @Module({
   imports: [AuthModule, ReviewModule],
   controllers: [AIController],
   providers: [
     AISanitizerService,
+    PromptTemplateRegistry,
+    AIResponseParser,
+    AICacheService,
     GeminiService,
     OpenAIService,
     OllamaService,
     MockAIService,
+    GeminiProvider,
+    OpenAIProvider,
+    OllamaProvider,
+    MockProvider,
+    AIProviderFactory,
     AIFactoryService,
+    AIService,
     AnalyzeCodeReviewUseCase,
+    ReviewQueueProducer,
+    ReviewQueueProcessor,
+    ReviewEventsGateway,
   ],
-  exports: [AIFactoryService, AnalyzeCodeReviewUseCase, AISanitizerService],
+  exports: [
+    AIService,
+    AICacheService,
+    AIResponseParser,
+    AIFactoryService,
+    AIProviderFactory,
+    AnalyzeCodeReviewUseCase,
+    AISanitizerService,
+    PromptTemplateRegistry,
+    GeminiProvider,
+    OpenAIProvider,
+    OllamaProvider,
+    MockProvider,
+    ReviewQueueProducer,
+    ReviewQueueProcessor,
+    ReviewEventsGateway,
+  ],
 })
 export class AIModule {}
