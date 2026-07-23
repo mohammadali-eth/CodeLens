@@ -1,240 +1,187 @@
-# CodeLens – AI-Powered Code Review Platform
+# 🔍 CodeLens — Enterprise AI-Powered Code Review Platform
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Java-21%20LTS-007396?style=for-the-badge&logo=java&logoColor=white" alt="Java 21 LTS" />
-  <img src="https://img.shields.io/badge/Spring%20Boot-3.3.1-6DB33F?style=for-the-badge&logo=springboot&logoColor=white" alt="Spring Boot 3.3" />
-  <img src="https://img.shields.io/badge/Google%20Gemini-AI%20Engine-4285F4?style=for-the-badge&logo=google&logoColor=white" alt="Google Gemini API" />
-  <img src="https://img.shields.io/badge/MySQL-8.0-4479A1?style=for-the-badge&logo=mysql&logoColor=white" alt="MySQL 8.0" />
-  <img src="https://img.shields.io/badge/Thymeleaf-3.1-005F0F?style=for-the-badge&logo=thymeleaf&logoColor=white" alt="Thymeleaf" />
-  <img src="https://img.shields.io/badge/Bootstrap-5.3-7952B3?style=for-the-badge&logo=bootstrap&logoColor=white" alt="Bootstrap 5" />
-  <img src="https://img.shields.io/badge/License-Enterprise-red?style=for-the-badge" alt="Enterprise License" />
-</p>
+[![NestJS](https://img.shields.io/badge/Backend-NestJS_v11-E0234E?logo=nestjs&logoColor=white)](https://nestjs.com/)
+[![Angular](https://img.shields.io/badge/User_Portal-Angular_v17-DD0031?logo=angular&logoColor=white)](https://angular.io/)
+[![Vue](https://img.shields.io/badge/Admin_Portal-Vue_v3-4FC08D?logo=vuedotjs&logoColor=white)](https://vuejs.org/)
+[![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL_16-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Redis](https://img.shields.io/badge/Cache-Redis_7-DC382D?logo=redis&logoColor=white)](https://redis.io/)
+[![Docker](https://img.shields.io/badge/Infrastructure-Docker-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
+[![License](https://img.shields.io/badge/License-Proprietary-000000.svg)](LICENSE)
 
-> **CodeLens** is a production-ready, enterprise-grade AI-powered code review platform designed to transform peer-to-peer code reviews into an automated, high-throughput, intelligence-driven workflow. Combining **Spring Boot MVC**, **Google Gemini LLM intelligence**, **MySQL 8.0**, and **Thymeleaf + Bootstrap 5**, CodeLens enforces strict corporate coding standards, detects OWASP security vulnerabilities, profiles cyclomatic complexity, and generates contextual refactoring diffs.
+> **CodeLens** is a multi-tenant, enterprise-grade AI-powered code inspection and review platform. Built with **Clean Architecture** and **Domain-Driven Design (DDD)** principles, CodeLens automates code health evaluations, security vulnerability scanning, and real-time developer feedback using multi-model AI strategies (Google Gemini, OpenAI GPT, and local Ollama models).
 
 ---
 
-## 📌 Table of Contents
+## 🌟 Architecture Highlights
 
-- [Executive Overview](#-executive-overview)
-- [Key Enterprise Features](#-key-enterprise-features)
-- [System Architecture](#-system-architecture)
-- [Technology Stack Matrix](#-technology-stack-matrix)
-- [Enterprise Documentation Index](#-enterprise-documentation-index)
-- [Local Development & Quick Start](#-local-development--quick-start)
-- [Security & Compliance Baseline](#-security--compliance-baseline)
-- [Development Standards & SOLID Principles](#-development-standards--solid-principles)
-- [Future Architecture Roadmap](#-future-architecture-roadmap)
-- [License & Governance](#-license--governance)
+- **Clean Architecture & DDD**: Strict separation of concerns across Domain, Application, and Infrastructure layers. Core business logic remains 100% framework-agnostic.
+- **Multi-AI Gateway (Strategy Pattern)**: Dynamically switch between **Google Gemini**, **OpenAI**, and self-hosted **Ollama** LLMs at runtime.
+- **Enterprise Secret & PII Sanitizer**: Built-in regex scrubber that strips AWS keys, API tokens, JWTs, and database credentials before sending snippets to cloud AI providers.
+- **Hierarchical RBAC Security**: Role-based permission enforcement (`ADMIN > LEAD > DEV`) with bcrypt credential hashing (cost factor 12) and JWT token validation.
+- **Shared Monorepo Type Safety**: Distributed DTOs and domain types shared seamlessly across NestJS, Angular, and Vue.js via `@codelens/shared-dto`.
+- **Infrastructure & Observability**: Integrated Docker Compose stack with PostgreSQL 16, Redis 7, Prometheus metric scrapers, and Grafana monitoring dashboards.
 
 ---
 
-## 🚀 Executive Overview
+## 🏛️ System Architecture
 
-Modern enterprise software development organizations face severe operational bottlenecks during manual code reviews. Prolonged pull-request (PR) turnaround times, inconsistent quality checks, human fatigue, and missed zero-day vulnerabilities directly degrade engineering velocity and production stability.
+```mermaid
+graph TD
+    ClientUser["Angular User Portal (apps/frontend)"] -->|REST / WS| Gateway["NestJS API Gateway (apps/backend)"]
+    ClientAdmin["Vue.js Admin Portal (apps/admin)"] -->|REST| Gateway
 
-**CodeLens** solves this critical operational problem by introducing an intelligent, automated review layer into the development pipeline. Built upon strict Fortune 500 engineering practices, CodeLens shifts security and quality inspection left—providing real-time static code analysis, security auditing, and executable refactoring suggestions before code reaches human reviewers.
+    subgraph "NestJS Backend (Clean Architecture)"
+        Gateway --> Auth["Auth Module (IAM & RBAC)"]
+        Gateway --> Review["Code Review Engine"]
+        Gateway --> AIModule["Multi-AI Gateway"]
+        Gateway --> ChatModule["AI Chat Gateway"]
 
-```
-       +-----------------------------------------------------------------------+
-       |                           CODELENS PLATFORM                           |
-       +-----------------------------------------------------------------------+
-       |                                                                       |
-       |  +--------------------+     +-------------------+     +------------+  |
-       |  | Software Developer | --> | CodeLens Platform | --> | Google     |  |
-       |  | (Submits Code/Diff)|     | (Spring Boot MVC) |     | Gemini AI  |  |
-       |  +--------------------+     +-------------------+     +------------+  |
-       |                                       |                     |         |
-       |                                       v                     v         |
-       |                             +-------------------+     +------------+  |
-       |                             | MySQL Relational  |     | Refactored |  |
-       |                             | Audit & Metrics   |     | Diff Suggest| |
-       |                             +-------------------+     +------------+  |
-       |                                                                       |
-       +-----------------------------------------------------------------------+
+        Review --> Repos["Prisma DB Adapters"]
+        AIModule --> AISanitizer["PII & Secret Sanitizer"]
+        AISanitizer --> Gemini["Google Gemini API"]
+        AISanitizer --> OpenAI["OpenAI GPT API"]
+        AISanitizer --> Ollama["Local Ollama LLM"]
+    end
+
+    Repos --> Postgres[(PostgreSQL 16)]
+    Gateway --> Redis[(Redis 7 Cache)]
+    Gateway --> Prometheus[Prometheus & Grafana]
 ```
 
 ---
 
-## ✨ Key Enterprise Features
+## 💻 Tech Stack
 
-| Feature Module                       | Core Capabilities                                                                                                                               | Target Metric / Benchmark               |
-| :----------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------- |
-| 🔑 **User Identity & RBAC**          | Spring Security 6.x authentication, BCrypt cost 12 hashing, session management, and role-based permissions (`ADMIN`, `LEAD`, `DEV`, `AUDITOR`). | 100% RBAC access control coverage       |
-| 🤖 **Gemini AI Review Engine**       | Asynchronous Google Gemini LLM API integration with structured system prompts, token budget management, and PII scrubbing.                      | `< 10s` AI scan latency for 500 LOC     |
-| 🛡️ **OWASP Security Scanner**        | Automated inspection for OWASP Top 10 vulnerabilities (SQLi, XSS, Hardcoded API Keys, Insecure Deserialization).                                | Zero critical security bypasses allowed |
-| 📊 **Complexity & Quality Profiler** | Cyclomatic complexity scoring, Java Clean Code & ES6 style violation detection, and duplication profiling.                                      | Highlights methods with CC score > 10   |
-| 🔀 **Interactive Diff Viewer**       | Dark-mode side-by-side and inline code diff rendering built with Thymeleaf, Bootstrap 5, and ES6 JS.                                            | Zero layout shift during render         |
-| 📈 **Executive Analytics**           | Real-time code quality trends, vulnerability density, team review velocity, and downloadable audit reports.                                     | Instant Spring MVC model rendering      |
-
----
-
-## 🏗️ System Architecture
-
-CodeLens enforces the **Model-View-Controller (MVC)** architectural pattern, structured to support future microservices migration:
-
-```
-+---------------------------------------------------------------------------------------------------+
-|                                       CODELENS CONTAINER TOPOLOGY                                 |
-|                                                                                                   |
-|  +---------------------------------------------------------------------------------------------+  |
-|  |                             PRESENTATION LAYER (SPRING MVC & THYMELEAF)                     |  |
-|  |  Thymeleaf Server Templates  |  Bootstrap 5.3 Custom Theme  |  ES6 Interactive Scripts        |  |
-|  +---------------------------------------------------------------------------------------------+  |
-|                                                |                                                  |
-|                                                v                                                  |
-|  +---------------------------------------------------------------------------------------------+  |
-|  |                           SPRING BOOT 3.3 APPLICATION CORE SERVICE                          |  |
-|  |                                                                                             |  |
-|  |  +------------------------+   +------------------------+   +-----------------------------+  |  |
-|  |  | Spring MVC Controllers |   | Stateless Service Tier |   | Spring Security 6.x Filter  |  |  |
-|  |  +------------------------+   +------------------------+   +-----------------------------+  |  |
-|  |              |                            |                                |                |  |
-|  |              v                            v                                v                |  |
-|  |  +------------------------+   +------------------------+   +-----------------------------+  |  |
-|  |  | Spring Data JPA Repos  |   | Gemini AI Gateway Service  Audit & Exception Advice   |  |  |
-|  |  +------------------------+   +------------------------+   +-----------------------------+  |  |
-|  +---------------------------------------------------------------------------------------------+  |
-|                 |                                    |                                            |
-+-----------------|------------------------------------|--------------------------------------------+
-                  | JDBC / TLS (HikariCP)              | REST / HTTPS (TLS 1.3)
-                  v                                    v
-   +------------------------------+     +------------------------------+
-   |   MySQL 8.0 Enterprise DB    |     |   Google Gemini API Cloud    |
-   | (InnoDB Storage, UTF8MB4)    |     |  (AI Code Analysis LLM)      |
-   +------------------------------+     +------------------------------+
-```
+| Layer | Technology | Description |
+| :--- | :--- | :--- |
+| **Backend** | NestJS, TypeScript, Prisma ORM | Microservice-ready REST and WebSocket API Gateway |
+| **User Portal** | Angular 17, RxJS, Tailwind CSS | Developer inspection workspace, diff viewers, and AI chat |
+| **Admin Portal** | Vue 3, Vite, TypeScript | System administration, metrics monitoring, and audit logs |
+| **Database** | PostgreSQL 16 | Relational data persistence for users, reviews, and logs |
+| **Caching** | Redis 7 | High-performance session storage and rate limiting |
+| **AI Infrastructure** | Gemini API, OpenAI API, Ollama | Multi-provider AI inspection strategy engine |
+| **Monitoring** | Prometheus, Grafana | Health check scrapers and real-time metric dashboards |
+| **Containerization** | Docker, Docker Compose | Container orchestration for local infrastructure |
 
 ---
 
-## 🛠️ Technology Stack Matrix
-
-| Domain / Layer              | Technology Choice           | Version     | Enterprise Justification                                                                               |
-| :-------------------------- | :-------------------------- | :---------- | :----------------------------------------------------------------------------------------------------- |
-| **Language Runtime**        | Java LTS                    | `21 / 17`   | High concurrency, Project Loom virtual thread support, sealed classes, pattern matching.               |
-| **Core Framework**          | Spring Boot                 | `3.3.1`     | Production-ready framework providing auto-configuration, dependency injection, and metrics.            |
-| **Security Tier**           | Spring Security             | `6.x`       | Industry gold-standard for enterprise authentication, CSRF protection, and RBAC authorization.         |
-| **Persistence Tier**        | Spring Data JPA / Hibernate | `6.5`       | Abstraction layer for transactional operations, reducing boilerplate while maintaining schema control. |
-| **Relational Database**     | MySQL Enterprise            | `8.0`       | ACID-compliant storage engine with native `JSON` column support for review metadata.                   |
-| **Web Presentation**        | Thymeleaf + Bootstrap       | `3.1 / 5.3` | Server-rendered HTML providing low UI latency, anti-XSS protection, and dark-mode ergonomics.          |
-| **Artificial Intelligence** | Google Gemini API           | `1.5-Flash` | Context-aware LLM for structural code analysis, security auditing, and diff generation.                |
-| **Build System**            | Apache Maven                | `3.9+`      | Deterministic build lifecycle management, explicit versioning, and CI/CD integration.                  |
-
----
-
-## 📚 Enterprise Documentation Index
-
-CodeLens includes extensive enterprise documentation detailing every aspect of software engineering governance:
+## 📁 Monorepo Workspace Structure
 
 ```
 CodeLens/
-├── docs/
-│   ├── 01_PROJECT_VISION.md                    # Strategic Vision & Scope Alignment
-│   ├── 01_ENTERPRISE_PROJECT_STRUCTURE.md      # Directory Layout & Component Governance
-│   ├── 01_SOFTWARE_REQUIREMENTS_SPECIFICATION.md # SRS Functional & Non-Functional Baseline
-│   ├── architecture/
-│   │   └── 01_SYSTEM_ARCHITECTURE.md           # System Architecture & C4 Container Blueprint
-│   ├── database/
-│   │   └── 01_DATABASE_OVERVIEW.md             # MySQL Schema Architecture & Data Governance
-│   ├── ui-ux/
-│   │   └── 01_UI_UX_VISION.md                  # Developer Ergonomics & Component Specs
-│   ├── backend/
-│   │   └── 01_BACKEND_FOUNDATION_OVERVIEW.md   # Java 21 & Spring Boot Core Framework Rules
-│   ├── security/
-│   │   └── 01_IAM_OVERVIEW.md                  # Identity & Access Management & OWASP Defenses
-│   └── phase08_user_management/
-│       └── 01_USER_MANAGEMENT_ARCHITECTURE.md  # User Profile & Activity Audit Architecture
+├── apps/
+│   ├── backend/             # NestJS API Server (Clean Architecture + DDD)
+│   ├── frontend/            # Angular Developer User Portal
+│   └── admin/               # Vue.js Admin Console
+├── packages/
+│   └── shared-dto/          # Shared TypeScript models and API contracts
+├── infrastructure/
+│   └── monitoring/          # Prometheus & Grafana configuration files
+├── docker-compose.yml       # Local infrastructure stack (Postgres, Redis, Prometheus, Grafana)
+├── package.json             # Root monorepo workspace configuration
+└── LICENSE                  # Proprietary Enterprise Software License
 ```
 
 ---
 
-## 💻 Local Development & Quick Start
+## 🚀 Quickstart Guide
 
 ### Prerequisites
+- **Node.js**: `v18.19.1` or higher
+- **npm**: `v9.x` or higher
+- **Docker & Docker Compose**: Installed and running
 
-- **Java Development Kit (JDK):** Version 17 LTS or 21 LTS installed.
-- **Apache Maven:** Version 3.8.x or 3.9.x installed.
-- **MySQL Database Server:** Version 8.0 running locally or in Docker.
-- **Google Gemini API Key:** Valid API key from Google AI Studio.
+---
 
-### 1. Repository Setup
+### 1. Installation & Environment Setup
+
+Clone the repository and install all monorepo dependencies:
 
 ```bash
 git clone https://github.com/mohammadali-eth/CodeLens.git
 cd CodeLens
+npm install
 ```
 
-### 2. Configure Environment Variables
+Create an `.env` file inside `apps/backend/.env`:
 
-Copy `.env.example` to create your local environment file or set environment variables:
+```env
+PORT=4000
+NODE_ENV=development
+DATABASE_URL="postgresql://codelens_user:codelens_pass@localhost:5432/codelens_db?schema=public"
+REDIS_HOST="localhost"
+REDIS_PORT=6379
+JWT_SECRET="super-secret-key-for-codelens-platform-enterprise-version"
+DEFAULT_AI_PROVIDER="gemini"
+GEMINI_API_KEY="your-gemini-api-key"
+OPENAI_API_KEY="your-openai-api-key"
+```
+
+---
+
+### 2. Start Local Infrastructure
+
+Boot up PostgreSQL, Redis, Prometheus, and Grafana using Docker Compose:
 
 ```bash
-export DB_HOST=localhost
-export DB_PORT=3306
-export DB_NAME=codelens_db
-export DB_USER=root
-export DB_PASS=your_mysql_password
-export GEMINI_API_KEY=your_gemini_api_key
+npm run docker:up
 ```
 
-### 3. Build & Compile Application
+---
 
-Execute Maven build to compile source code and verify tests:
+### 3. Database Migration & Code Generation
+
+Generate the Prisma Client and sync the relational database schema:
 
 ```bash
-mvn clean compile
+npx prisma generate --schema=apps/backend/prisma/schema.prisma
+npx prisma db push --schema=apps/backend/prisma/schema.prisma
 ```
 
-### 4. Run Application locally
+---
 
-Start Spring Boot application server:
+### 4. Run Application Services
+
+Build all shared packages and start development servers:
 
 ```bash
-mvn spring-boot:run
-```
+# Build shared DTO package and backend
+npm run build:all
 
-Access the application in Google Chrome at:  
-👉 **`http://localhost:8080`**
+# Start backend server (Runs on http://localhost:4000)
+npm run backend:dev
 
----
+# Start Angular User Portal (Runs on http://localhost:4200)
+npm run frontend:dev
 
-## 🔒 Security & Compliance Baseline
-
-CodeLens implements a **Zero-Trust** security architecture:
-
-- **Password Hashing:** Passwords salted and hashed using `BCryptPasswordEncoder` (Cost Factor 12).
-- **CSRF Defense:** Synchronizer Token Pattern enforced across all Thymeleaf form submissions.
-- **Secrets Protection:** Zero persistent exposure of API keys; code snippets undergo PII/secret regex sanitization before LLM dispatch.
-- **Security Headers:** Enforces `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `HTTP Strict Transport Security (HSTS)`, and `Content-Security-Policy`.
-- **Database Encryption:** Database tables encrypted at rest (AES-256) and in transit (TLS 1.3).
-
----
-
-## 🏛️ Development Standards & SOLID Principles
-
-CodeLens mandates strict compliance with five enterprise software architecture rules:
-
-1. **Constructor Injection Only:** Field `@Autowired` is strictly forbidden. Dependencies are injected via explicit `final` constructor parameters.
-2. **Immutability by Default:** API request/response payloads use Java 21 `record` types.
-3. **Disabled OSIV:** Open-Session-In-View disabled (`spring.jpa.open-in-view=false`) to force explicit transaction boundaries.
-4. **Decoupled AI Engine:** Gemini API client logic is encapsulated within `IAICodeReviewGateway` to allow offline mocking.
-5. **Fail-Fast Validation:** Incoming controller payloads validated via `@Valid` before service execution.
-
----
-
-## 🗺️ Future Architecture Roadmap
-
-```
-+-------------------+      +-------------------+      +-------------------+
-| Phase 1: Monolith | ---> | Phase 2: Scale    | ---> | Phase 3: AI Ops   |
-| Spring Boot MVC   |      | Redis Caching     |      | Microservices &   |
-| MySQL + Gemini    |      | RabbitMQ Queueing |      | Self-Healing PRs  |
-+-------------------+      +-------------------+      +-------------------+
+# Start Vue.js Admin Portal (Runs on http://localhost:5173)
+npm run admin:dev
 ```
 
 ---
 
-## 📄 License & Governance
+## 🔌 API Endpoints Summary
 
-Copyright © 2026 CodeLens Enterprise Architecture Team. All Rights Reserved.  
-Distributed under the **Enterprise Software License**. See `LICENSE` for full details.
+### Authentication (`/auth`)
+- `POST /auth/register` — Register a new developer account.
+- `POST /auth/login` — Authenticate and receive a JWT access token.
+
+### Code Reviews (`/reviews`)
+- `POST /reviews` — Submit repository code files for inspection.
+- `GET /reviews` — List paginated historical reviews.
+- `GET /reviews/:id` — Retrieve review details with flagged security issues.
+
+### AI Inspection Engine (`/ai`)
+- `POST /ai/analyze/:reviewId?provider=gemini` — Execute AI code inspection using the specified strategy (`gemini`, `openai`, `ollama`).
+
+### AI Chat Assistant (`/chat`)
+- `POST /chat/sessions` — Start a new AI chat session.
+- `GET /chat/sessions` — List user chat history.
+- `POST /chat/sessions/:id/messages` — Send sanitized code prompts to the AI assistant.
+
+---
+
+## 🛡️ License
+
+Copyright © 2026 CodeLens Platform. All rights reserved.  
+Distributed under a **Proprietary Enterprise Software License**. See [LICENSE](LICENSE) for details.

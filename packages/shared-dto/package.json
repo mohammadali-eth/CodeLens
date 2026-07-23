@@ -1,0 +1,13 @@
+{
+  "name": "@codelens/shared-dto",
+  "version": "1.0.0",
+  "description": "Shared Data Transfer Objects and TypeScript types for CodeLens SaaS platform",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}

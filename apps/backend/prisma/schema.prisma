@@ -1,0 +1,152 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  DEV
+  LEAD
+  ADMIN
+}
+
+enum ReviewStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+enum Severity {
+  INFO
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+}
+
+model User {
+  id           String          @id @default(uuid())
+  email        String          @unique
+  password     String
+  name         String?
+  role         Role            @default(DEV)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  reviews      Review[]
+  chatSessions ChatSession[]
+  favorites    Favorite[]
+  activities   Activity[]
+  preferences  UserPreference?
+
+  @@map("users")
+}
+
+model UserPreference {
+  id                   String  @id @default(uuid())
+  userId               String  @unique
+  user                 User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  theme                String  @default("dark")
+  defaultAIProvider    String  @default("gemini")
+  notificationsEnabled Boolean @default(true)
+
+  @@map("user_preferences")
+}
+
+model Review {
+  id         String       @id @default(uuid())
+  title      String
+  repository String
+  branch     String
+  status     ReviewStatus @default(PENDING)
+  score      Int?
+  creatorId  String
+  creator    User         @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  files      CodeFile[]
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  favorites  Favorite[]
+
+  @@map("reviews")
+}
+
+model CodeFile {
+  id       String  @id @default(uuid())
+  reviewId String
+  review   Review  @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  filename String
+  content  String  @db.Text
+  language String
+  issues   Issue[]
+
+  @@map("code_files")
+}
+
+model Issue {
+  id         String   @id @default(uuid())
+  fileId     String
+  file       CodeFile @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  line       Int
+  severity   Severity
+  type       String   // e.g. SECURITY, COMPLEXITY, STYLE, BUG
+  message    String   @db.Text
+  suggestion String?  @db.Text
+
+  @@map("issues")
+}
+
+model ChatSession {
+  id        String        @id @default(uuid())
+  userId    String
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  messages  ChatMessage[]
+
+  @@map("chat_sessions")
+}
+
+model ChatMessage {
+  id        String      @id @default(uuid())
+  sessionId String
+  session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  role      MessageRole
+  content   String      @db.Text
+  createdAt DateTime    @default(now())
+
+  @@map("chat_messages")
+}
+
+model Favorite {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reviewId  String
+  review    Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, reviewId])
+  @@map("favorites")
+}
+
+model Activity {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action    String   // e.g. REGISTER, LOGIN, CREATE_REVIEW, FAVORITE_REVIEW, CHAT_MESSAGE
+  details   String?  @db.Text
+  createdAt DateTime @default(now())
+
+  @@map("activities")
+}

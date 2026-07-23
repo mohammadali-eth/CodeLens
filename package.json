@@ -1,0 +1,27 @@
+{
+  "name": "codelens-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "CodeLens AI-powered Code Review Platform Monorepo",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "backend:dev": "npm run start:dev -w apps/backend",
+    "backend:build": "npm run build -w apps/backend",
+    "shared-dto:build": "npm run build -w packages/shared-dto",
+    "build:all": "npm run shared-dto:build && npm run backend:build",
+    "frontend:dev": "npm run start -w apps/frontend",
+    "frontend:build": "npm run build -w apps/frontend",
+    "admin:dev": "npm run dev -w apps/admin",
+    "admin:build": "npm run build -w apps/admin",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down"
+  },
+  "devDependencies": {
+    "@angular/cli": "^17.3.17",
+    "@types/bcrypt": "^6.0.0",
+    "typescript": "^5.2.2"
+  }
+}
