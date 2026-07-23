@@ -58,14 +58,14 @@ Modern enterprise software development organizations face severe operational bot
 
 ## ✨ Key Enterprise Features
 
-| Feature Module | Core Capabilities | Target Metric / Benchmark |
-| :--- | :--- | :--- |
-| 🔑 **User Identity & RBAC** | Spring Security 6.x authentication, BCrypt cost 12 hashing, session management, and role-based permissions (`ADMIN`, `LEAD`, `DEV`, `AUDITOR`). | 100% RBAC access control coverage |
-| 🤖 **Gemini AI Review Engine** | Asynchronous Google Gemini LLM API integration with structured system prompts, token budget management, and PII scrubbing. | `< 10s` AI scan latency for 500 LOC |
-| 🛡️ **OWASP Security Scanner** | Automated inspection for OWASP Top 10 vulnerabilities (SQLi, XSS, Hardcoded API Keys, Insecure Deserialization). | Zero critical security bypasses allowed |
-| 📊 **Complexity & Quality Profiler**| Cyclomatic complexity scoring, Java Clean Code & ES6 style violation detection, and duplication profiling. | Highlights methods with CC score > 10 |
-| 🔀 **Interactive Diff Viewer** | Dark-mode side-by-side and inline code diff rendering built with Thymeleaf, Bootstrap 5, and ES6 JS. | Zero layout shift during render |
-| 📈 **Executive Analytics** | Real-time code quality trends, vulnerability density, team review velocity, and downloadable audit reports. | Instant Spring MVC model rendering |
+| Feature Module                       | Core Capabilities                                                                                                                               | Target Metric / Benchmark               |
+| :----------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------- |
+| 🔑 **User Identity & RBAC**          | Spring Security 6.x authentication, BCrypt cost 12 hashing, session management, and role-based permissions (`ADMIN`, `LEAD`, `DEV`, `AUDITOR`). | 100% RBAC access control coverage       |
+| 🤖 **Gemini AI Review Engine**       | Asynchronous Google Gemini LLM API integration with structured system prompts, token budget management, and PII scrubbing.                      | `< 10s` AI scan latency for 500 LOC     |
+| 🛡️ **OWASP Security Scanner**        | Automated inspection for OWASP Top 10 vulnerabilities (SQLi, XSS, Hardcoded API Keys, Insecure Deserialization).                                | Zero critical security bypasses allowed |
+| 📊 **Complexity & Quality Profiler** | Cyclomatic complexity scoring, Java Clean Code & ES6 style violation detection, and duplication profiling.                                      | Highlights methods with CC score > 10   |
+| 🔀 **Interactive Diff Viewer**       | Dark-mode side-by-side and inline code diff rendering built with Thymeleaf, Bootstrap 5, and ES6 JS.                                            | Zero layout shift during render         |
+| 📈 **Executive Analytics**           | Real-time code quality trends, vulnerability density, team review velocity, and downloadable audit reports.                                     | Instant Spring MVC model rendering      |
 
 ---
 
@@ -109,16 +109,16 @@ CodeLens enforces the **Model-View-Controller (MVC)** architectural pattern, str
 
 ## 🛠️ Technology Stack Matrix
 
-| Domain / Layer | Technology Choice | Version | Enterprise Justification |
-| :--- | :--- | :--- | :--- |
-| **Language Runtime** | Java LTS | `21 / 17` | High concurrency, Project Loom virtual thread support, sealed classes, pattern matching. |
-| **Core Framework** | Spring Boot | `3.3.1` | Production-ready framework providing auto-configuration, dependency injection, and metrics. |
-| **Security Tier** | Spring Security | `6.x` | Industry gold-standard for enterprise authentication, CSRF protection, and RBAC authorization. |
-| **Persistence Tier** | Spring Data JPA / Hibernate | `6.5` | Abstraction layer for transactional operations, reducing boilerplate while maintaining schema control. |
-| **Relational Database**| MySQL Enterprise | `8.0` | ACID-compliant storage engine with native `JSON` column support for review metadata. |
-| **Web Presentation** | Thymeleaf + Bootstrap | `3.1 / 5.3` | Server-rendered HTML providing low UI latency, anti-XSS protection, and dark-mode ergonomics. |
-| **Artificial Intelligence**| Google Gemini API | `1.5-Flash` | Context-aware LLM for structural code analysis, security auditing, and diff generation. |
-| **Build System** | Apache Maven | `3.9+` | Deterministic build lifecycle management, explicit versioning, and CI/CD integration. |
+| Domain / Layer              | Technology Choice           | Version     | Enterprise Justification                                                                               |
+| :-------------------------- | :-------------------------- | :---------- | :----------------------------------------------------------------------------------------------------- |
+| **Language Runtime**        | Java LTS                    | `21 / 17`   | High concurrency, Project Loom virtual thread support, sealed classes, pattern matching.               |
+| **Core Framework**          | Spring Boot                 | `3.3.1`     | Production-ready framework providing auto-configuration, dependency injection, and metrics.            |
+| **Security Tier**           | Spring Security             | `6.x`       | Industry gold-standard for enterprise authentication, CSRF protection, and RBAC authorization.         |
+| **Persistence Tier**        | Spring Data JPA / Hibernate | `6.5`       | Abstraction layer for transactional operations, reducing boilerplate while maintaining schema control. |
+| **Relational Database**     | MySQL Enterprise            | `8.0`       | ACID-compliant storage engine with native `JSON` column support for review metadata.                   |
+| **Web Presentation**        | Thymeleaf + Bootstrap       | `3.1 / 5.3` | Server-rendered HTML providing low UI latency, anti-XSS protection, and dark-mode ergonomics.          |
+| **Artificial Intelligence** | Google Gemini API           | `1.5-Flash` | Context-aware LLM for structural code analysis, security auditing, and diff generation.                |
+| **Build System**            | Apache Maven                | `3.9+`      | Deterministic build lifecycle management, explicit versioning, and CI/CD integration.                  |
 
 ---
 
@@ -151,19 +151,23 @@ CodeLens/
 ## 💻 Local Development & Quick Start
 
 ### Prerequisites
+
 - **Java Development Kit (JDK):** Version 17 LTS or 21 LTS installed.
 - **Apache Maven:** Version 3.8.x or 3.9.x installed.
 - **MySQL Database Server:** Version 8.0 running locally or in Docker.
 - **Google Gemini API Key:** Valid API key from Google AI Studio.
 
 ### 1. Repository Setup
+
 ```bash
 git clone https://github.com/mohammadali-eth/CodeLens.git
 cd CodeLens
 ```
 
 ### 2. Configure Environment Variables
+
 Copy `.env.example` to create your local environment file or set environment variables:
+
 ```bash
 export DB_HOST=localhost
 export DB_PORT=3306
@@ -174,13 +178,17 @@ export GEMINI_API_KEY=your_gemini_api_key
 ```
 
 ### 3. Build & Compile Application
+
 Execute Maven build to compile source code and verify tests:
+
 ```bash
 mvn clean compile
 ```
 
 ### 4. Run Application locally
+
 Start Spring Boot application server:
+
 ```bash
 mvn spring-boot:run
 ```
