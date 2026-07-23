@@ -11,8 +11,11 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.header.writers.XXssProtectionHeaderWriter;
 
@@ -49,6 +52,23 @@ public class SecurityConfig {
             "/actuator/health",
             "/actuator/info"
     };
+
+    /**
+     * In-memory User Details Manager for local development and UI demonstrations.
+     */
+    @Bean
+    public UserDetailsService userDetailsService() {
+        log.info("Initializing In-Memory UserDetailsService with default development users...");
+        var adminUser = User.withUsername("admin")
+                .password(passwordEncoder().encode("admin"))
+                .roles("ADMIN", "LEAD", "DEV")
+                .build();
+        var devUser = User.withUsername("user")
+                .password(passwordEncoder().encode("password"))
+                .roles("DEV")
+                .build();
+        return new InMemoryUserDetailsManager(adminUser, devUser);
+    }
 
     /**
      * Standard BCrypt Password Encoder with cost factor 12.
