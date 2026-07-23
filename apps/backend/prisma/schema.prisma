@@ -11,9 +11,16 @@ datasource db {
 }
 
 enum Role {
-  DEV
-  LEAD
+  USER
   ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  PENDING_VERIFICATION
+  SUSPENDED
+  DELETED
 }
 
 enum ReviewStatus {
@@ -36,19 +43,27 @@ enum MessageRole {
 }
 
 model User {
-  id           String          @id @default(uuid())
-  email        String          @unique
-  password     String
-  name         String?
-  role         Role            @default(DEV)
-  createdAt    DateTime        @default(now())
-  updatedAt    DateTime        @updatedAt
-  reviews      Review[]
-  chatSessions ChatSession[]
-  favorites    Favorite[]
-  activities   Activity[]
-  preferences  UserPreference?
+  id            String          @id @default(uuid())
+  email         String          @unique
+  password      String
+  name          String?
+  role          Role            @default(USER)
+  status        UserStatus      @default(PENDING_VERIFICATION)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  deletedAt     DateTime?
+  refreshTokens RefreshToken[]
+  auditLogs     AuditLog[]
+  activities    Activity[]
+  reviews       Review[]
+  chatSessions  ChatSession[]
+  favorites     Favorite[]
+  preferences   UserPreference?
 
+  @@index([email])
+  @@index([status])
+  @@index([role])
+  @@index([deletedAt])
   @@map("users")
 }
 
@@ -61,6 +76,39 @@ model UserPreference {
   notificationsEnabled Boolean @default(true)
 
   @@map("user_preferences")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  family    String   // Token family UUID to detect token reuse attacks
+  isRevoked Boolean  @default(false)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([token])
+  @@index([family])
+  @@map("refresh_tokens")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    String   // e.g. AUTH_REGISTER, AUTH_LOGIN, AUTH_REFRESH, AUTH_LOGOUT, USER_UPDATE, USER_CHANGE_PASSWORD, ADMIN_USER_STATUS_UPDATE, ADMIN_USER_DELETE
+  ipAddress String?
+  userAgent String?
+  metadata  String?  @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
 }
 
 model Review {

@@ -2,7 +2,7 @@ import { Inject, Injectable, ConflictException } from '@nestjs/common';
 import { IUserRepository } from '../ports/user-repository.interface';
 import { IPasswordHasher } from '../ports/password-hasher.interface';
 import { User } from '../../domain/user.entity';
-import { Role } from '../../domain/role.enum';
+import { UserRole } from '../../domain/user-role.enum';
 import { RegisterDto } from '../../infrastructure/controllers/dtos/register.dto';
 
 @Injectable()
@@ -21,16 +21,11 @@ export class RegisterUseCase {
     }
 
     const passwordHash = await this.passwordHasher.hash(dto.password);
-    
-    // Auto-generate UUID or let database handle it. Since we are in clean architecture, we can let database or generator handle it.
-    // For now we'll pass an empty string and let repository adapter populate it, or generate one.
-    // Let's import uuid to generate ID inside the domain or let the adapter handle it. Generating here is more domain-friendly.
-    // We can use standard crypto.randomUUID() which is built into Node.js! That requires no external packages!
     const id = crypto.randomUUID();
-    
-    const userRole = dto.role && Object.values(Role).includes(dto.role as Role)
-      ? (dto.role as Role)
-      : Role.DEV;
+
+    const userRole = dto.role && Object.values(UserRole).includes(dto.role as UserRole)
+      ? (dto.role as UserRole)
+      : UserRole.USER;
 
     const user = User.create(
       id,
@@ -47,9 +42,17 @@ export class RegisterUseCase {
       email: savedUser.email,
       name: savedUser.name,
       role: savedUser.role,
+      status: savedUser.status,
       createdAt: savedUser.createdAt,
       updatedAt: savedUser.updatedAt,
-      hasRole: savedUser.hasRole.bind(savedUser),
+      deletedAt: savedUser.deletedAt,
+      isActive: savedUser.isActive.bind(savedUser),
+      isDeleted: savedUser.isDeleted.bind(savedUser),
+      canAuthenticate: savedUser.canAuthenticate.bind(savedUser),
+      softDelete: savedUser.softDelete.bind(savedUser),
+      updateStatus: savedUser.updateStatus.bind(savedUser),
+      updateProfile: savedUser.updateProfile.bind(savedUser),
+      updatePassword: savedUser.updatePassword.bind(savedUser),
     };
   }
 }

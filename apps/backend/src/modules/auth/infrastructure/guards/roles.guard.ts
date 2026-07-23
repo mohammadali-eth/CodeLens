@@ -1,6 +1,6 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { Role } from '../../domain/role.enum';
+import { UserRole } from '../../domain/user-role.enum';
 import { ROLES_KEY } from '../decorators/roles.decorator';
 
 @Injectable()
@@ -8,7 +8,7 @@ export class RolesGuard implements CanActivate {
   constructor(private readonly reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
-    const requiredRoles = this.reflector.getAllAndOverride<Role[]>(ROLES_KEY, [
+    const requiredRoles = this.reflector.getAllAndOverride<UserRole[]>(ROLES_KEY, [
       context.getHandler(),
       context.getClass(),
     ]);
@@ -22,17 +22,16 @@ export class RolesGuard implements CanActivate {
       return false;
     }
 
-    const userRole = user.role as Role;
+    const userRole = user.role as UserRole;
 
     // Strict role hierarchy definitions
-    const roleHierarchy: Record<Role, number> = {
-      [Role.DEV]: 1,
-      [Role.LEAD]: 2,
-      [Role.ADMIN]: 3,
+    const roleHierarchy: Record<UserRole, number> = {
+      [UserRole.USER]: 1,
+      [UserRole.ADMIN]: 2,
     };
 
     const userWeight = roleHierarchy[userRole] || 0;
 
-    return requiredRoles.some((role) => userWeight >= roleHierarchy[role]);
+    return requiredRoles.some((role) => userWeight >= (roleHierarchy[role] || 0));
   }
 }

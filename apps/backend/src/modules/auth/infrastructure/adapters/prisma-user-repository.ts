@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../database/prisma.service';
 import { User } from '../../domain/user.entity';
-import { Role } from '../../domain/role.enum';
+import { UserRole } from '../../domain/user-role.enum';
+import { UserStatus } from '../../domain/user-status.enum';
 import { IUserRepository } from '../../application/ports/user-repository.interface';
 
 @Injectable()
@@ -14,9 +15,11 @@ export class PrismaUserRepository implements IUserRepository {
       dbUser.email,
       dbUser.password, // Maps DB password storage to domain's passwordHash field
       dbUser.name,
-      dbUser.role as Role,
+      dbUser.role as UserRole,
+      dbUser.status as UserStatus,
       dbUser.createdAt,
       dbUser.updatedAt,
+      dbUser.deletedAt,
     );
   }
 
@@ -34,6 +37,25 @@ export class PrismaUserRepository implements IUserRepository {
     return dbUser ? this.mapToDomain(dbUser) : null;
   }
 
+  async findAll(options?: { skip?: number; take?: number }): Promise<{ users: User[]; total: number }> {
+    const skip = options?.skip || 0;
+    const take = options?.take || 20;
+
+    const [dbUsers, total] = await Promise.all([
+      this.prisma.user.findMany({
+        skip,
+        take,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.user.count(),
+    ]);
+
+    return {
+      users: dbUsers.map((u) => this.mapToDomain(u)),
+      total,
+    };
+  }
+
   async save(user: User): Promise<User> {
     const dbUser = await this.prisma.user.upsert({
       where: { id: user.id },
@@ -42,6 +64,8 @@ export class PrismaUserRepository implements IUserRepository {
         password: user.passwordHash,
         name: user.name,
         role: user.role,
+        status: user.status,
+        deletedAt: user.deletedAt,
       },
       create: {
         id: user.id,
@@ -49,6 +73,8 @@ export class PrismaUserRepository implements IUserRepository {
         password: user.passwordHash,
         name: user.name,
         role: user.role,
+        status: user.status,
+        deletedAt: user.deletedAt,
       },
     });
 
