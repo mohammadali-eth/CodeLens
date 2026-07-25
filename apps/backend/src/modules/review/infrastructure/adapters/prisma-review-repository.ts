@@ -11,6 +11,7 @@ import {
   Review as DbReview,
   ReviewFile as DbReviewFile,
   Issue as DbIssue,
+  ChatSession as DbChatSession,
 } from '@prisma/client';
 
 type FullDbReviewFile = DbReviewFile & {
@@ -19,6 +20,7 @@ type FullDbReviewFile = DbReviewFile & {
 
 type FullDbReview = DbReview & {
   files: FullDbReviewFile[];
+  chatSessions?: DbChatSession[];
 };
 
 /**
@@ -76,7 +78,7 @@ export class PrismaReviewRepository implements IReviewRepository {
       dbReview.processingTimeMs || null,
       dbReview.creatorId,
       dbReview.parentReviewId || null,
-      dbReview.chatSessionId || null,
+      dbReview.chatSessions?.[0]?.id || null,
       dbReview.workspaceId || null,
       files,
       dbReview.explanation || null,

@@ -54,6 +54,7 @@ enum Severity {
 }
 
 enum MessageRole {
+  SYSTEM
   USER
   ASSISTANT
 }
@@ -153,8 +154,7 @@ model Review {
   parentReviewId   String?
   parentReview     Review?          @relation("ReviewReAnalysis", fields: [parentReviewId], references: [id], onDelete: SetNull)
   reAnalyses       Review[]         @relation("ReviewReAnalysis")
-  chatSessionId    String?          @unique
-  chatSession      ChatSession?     @relation(fields: [chatSessionId], references: [id], onDelete: SetNull)
+  chatSessions     ChatSession[]
   workspaceId      String?
   files            ReviewFile[]
   favorites        FavoriteReview[]
@@ -220,29 +220,62 @@ model FavoriteReview {
 }
 
 model ChatSession {
-  id        String        @id @default(uuid())
-  userId    String
-  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  review    Review?
-  title     String
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
-  messages  ChatMessage[]
+  id          String        @id @default(uuid())
+  userId      String
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reviewId    String?
+  review      Review?       @relation(fields: [reviewId], references: [id], onDelete: SetNull)
+  title       String
+  isPinned    Boolean       @default(false)
+  aiProvider  String        @default("gemini")
+  aiModel     String?
+  totalTokens Int           @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  deletedAt   DateTime?
+  messages    ChatMessage[]
 
   @@index([userId])
+  @@index([reviewId])
+  @@index([userId, isPinned])
+  @@index([deletedAt])
   @@map("chat_sessions")
 }
 
 model ChatMessage {
-  id        String      @id @default(uuid())
-  sessionId String
-  session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  role      MessageRole
-  content   String      @db.Text
-  createdAt DateTime    @default(now())
+  id               String           @id @default(uuid())
+  sessionId        String
+  session          ChatSession      @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  role             MessageRole
+  content          String           @db.Text
+  promptTokens     Int?             @default(0)
+  completionTokens Int?             @default(0)
+  totalTokens      Int?             @default(0)
+  processingTimeMs Int?
+  modelUsed        String?
+  createdAt        DateTime         @default(now())
+  deletedAt        DateTime?
+  attachments      ChatAttachment[]
 
   @@index([sessionId])
+  @@index([sessionId, createdAt])
+  @@index([deletedAt])
   @@map("chat_messages")
+}
+
+model ChatAttachment {
+  id        String      @id @default(uuid())
+  messageId String
+  message   ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  fileId    String?
+  filename  String?
+  lineStart Int?
+  lineEnd   Int?
+  snippet   String?     @db.Text
+  createdAt DateTime    @default(now())
+
+  @@index([messageId])
+  @@map("chat_attachments")
 }
 
 model Activity {
