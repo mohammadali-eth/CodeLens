@@ -1,0 +1,36 @@
+# Git and IDE
+.git
+.gitignore
+.vscode
+.idea
+*.swp
+*.swo
+
+# Node dependencies and build outputs
+node_modules
+**/node_modules
+dist
+**/dist
+build
+**/build
+.next
+.nuxt
+coverage
+**/coverage
+.npm
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment and local secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.cert
+
+# App data & agent artifacts
+.gemini
+tmp
+*.log
