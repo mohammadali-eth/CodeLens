@@ -16,9 +16,9 @@ export class SystemSettingEntity {
     public readonly updatedAt: Date = new Date(),
   ) {}
 
-  public getValueAsJson<T = any>(): T {
+  public getValueAsJson<T = unknown>(): T {
     try {
-      return JSON.parse(this.value);
+      return JSON.parse(this.value) as T;
     } catch {
       return this.value as unknown as T;
     }

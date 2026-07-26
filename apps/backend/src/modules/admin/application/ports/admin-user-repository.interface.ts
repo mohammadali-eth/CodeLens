@@ -26,5 +26,7 @@ export interface IAdminUserRepository {
   updateRole(id: string, role: AdminRole): Promise<User>;
   softDelete(id: string): Promise<void>;
   updatePassword(id: string, passwordHash: string): Promise<void>;
-  getUserReviewStats(userId: string): Promise<{ totalReviews: number; averageScore: number | null }>;
+  getUserReviewStats(
+    userId: string,
+  ): Promise<{ totalReviews: number; averageScore: number | null }>;
 }

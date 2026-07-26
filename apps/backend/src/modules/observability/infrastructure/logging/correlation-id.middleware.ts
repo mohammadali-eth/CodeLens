@@ -13,8 +13,10 @@ export interface RequestWithCorrelation extends Request {
 @Injectable()
 export class CorrelationIdMiddleware implements NestMiddleware {
   use(req: RequestWithCorrelation, res: Response, next: NextFunction): void {
-    const requestId = (req.headers[REQUEST_ID_HEADER] as string) || randomUUID();
-    const correlationId = (req.headers[CORRELATION_ID_HEADER] as string) || requestId;
+    const requestId =
+      (req.headers[REQUEST_ID_HEADER] as string) || randomUUID();
+    const correlationId =
+      (req.headers[CORRELATION_ID_HEADER] as string) || requestId;
 
     req.requestId = requestId;
     req.correlationId = correlationId;

@@ -19,9 +19,22 @@ export interface CreateReportData {
 export interface IReportRepository {
   create(data: CreateReportData): Promise<ReportEntity>;
   findById(id: string): Promise<ReportEntity | null>;
-  findByReviewIdAndFormat(reviewId: string, format: ReportFormat, templateType?: ReportTemplateType): Promise<ReportEntity | null>;
-  findUserReports(userId: string, limit?: number, offset?: number): Promise<{ reports: ReportEntity[]; total: number }>;
+  findByReviewIdAndFormat(
+    reviewId: string,
+    format: ReportFormat,
+    templateType?: ReportTemplateType,
+  ): Promise<ReportEntity | null>;
+  findUserReports(
+    userId: string,
+    limit?: number,
+    offset?: number,
+  ): Promise<{ reports: ReportEntity[]; total: number }>;
   incrementDownloadCount(id: string): Promise<void>;
   softDelete(id: string): Promise<void>;
-  updateContent(id: string, content: any, fileUrl?: string, fileSize?: number): Promise<ReportEntity>;
+  updateContent(
+    id: string,
+    content: any,
+    fileUrl?: string,
+    fileSize?: number,
+  ): Promise<ReportEntity>;
 }

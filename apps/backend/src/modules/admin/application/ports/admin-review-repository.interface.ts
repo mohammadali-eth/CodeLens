@@ -19,7 +19,9 @@ export interface PaginatedAdminReviewsResult {
 }
 
 export interface IAdminReviewRepository {
-  findAll(options: AdminReviewQueryOptions): Promise<PaginatedAdminReviewsResult>;
+  findAll(
+    options: AdminReviewQueryOptions,
+  ): Promise<PaginatedAdminReviewsResult>;
   findById(id: string): Promise<Review | null>;
   softDelete(id: string): Promise<void>;
   restore(id: string): Promise<Review>;

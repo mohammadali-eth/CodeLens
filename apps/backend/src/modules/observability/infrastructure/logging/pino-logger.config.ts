@@ -2,7 +2,8 @@ import { Params } from 'nestjs-pino';
 import { RequestWithCorrelation } from './correlation-id.middleware';
 
 export const getPinoLoggerConfig = (): Params => {
-  const isProduction = process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'staging';
+  const isProduction =
+    process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'staging';
 
   return {
     pinoHttp: {
@@ -23,18 +24,22 @@ export const getPinoLoggerConfig = (): Params => {
         correlationId: req.correlationId,
       }),
       autoLogging: {
-        ignore: (req) => Boolean(req.url && (req.url.includes('/health') || req.url.includes('/metrics'))),
+        ignore: (req) =>
+          Boolean(
+            req.url &&
+            (req.url.includes('/health') || req.url.includes('/metrics')),
+          ),
       },
       serializers: {
-        req: (req) => ({
-          id: req.id,
-          method: req.method,
-          url: req.url,
-          query: req.query,
-          params: req.params,
+        req: (req: Record<string, unknown>) => ({
+          id: req['id'],
+          method: req['method'],
+          url: req['url'],
+          query: req['query'],
+          params: req['params'],
         }),
-        res: (res) => ({
-          statusCode: res.statusCode,
+        res: (res: Record<string, unknown>) => ({
+          statusCode: res['statusCode'],
         }),
       },
       timestamp: () => `,"time":"${new Date().toISOString()}"`,
