@@ -1,0 +1,1 @@
+export const STATE_MODULE_TOKEN = 'CDL_STATE_MODULE';

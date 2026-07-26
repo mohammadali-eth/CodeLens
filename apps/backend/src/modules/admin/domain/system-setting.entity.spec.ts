@@ -36,7 +36,9 @@ describe('SystemSettingEntity', () => {
     const jsonStr = JSON.stringify({ theme: 'dark', itemsPerPage: 20 });
     const setting = new SystemSettingEntity('1', 'UI_CONFIG', jsonStr);
 
-    expect(setting.getValueAsJson<{ theme: string; itemsPerPage: number }>()).toEqual({
+    expect(
+      setting.getValueAsJson<{ theme: string; itemsPerPage: number }>(),
+    ).toEqual({
       theme: 'dark',
       itemsPerPage: 20,
     });

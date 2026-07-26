@@ -1,0 +1,1 @@
+export const LAYOUT_MODULE_TOKEN = 'CDL_LAYOUT_MODULE';

@@ -1,0 +1,1 @@
+export const CORE_MODULE_TOKEN = 'CDL_CORE_MODULE';

@@ -1,0 +1,1 @@
+export const SHARED_MODULE_TOKEN = 'CDL_SHARED_MODULE';

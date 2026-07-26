@@ -1,0 +1,1 @@
+export const UTILS_MODULE_TOKEN = 'CDL_UTILS_MODULE';

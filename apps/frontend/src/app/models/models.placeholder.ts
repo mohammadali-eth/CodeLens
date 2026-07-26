@@ -1,0 +1,1 @@
+export const MODELS_MODULE_TOKEN = 'CDL_MODELS_MODULE';

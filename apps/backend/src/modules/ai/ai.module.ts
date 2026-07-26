@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { AuthModule } from '../auth/auth.module';
 import { ReviewModule } from '../review/review.module';
 import { AISanitizerService } from './infrastructure/sanitizer/ai-sanitizer.service';
@@ -23,7 +23,7 @@ import { ReviewQueueProcessor } from './infrastructure/queue/review-queue.proces
 import { ReviewEventsGateway } from './infrastructure/websockets/review-events.gateway';
 
 @Module({
-  imports: [AuthModule, ReviewModule],
+  imports: [AuthModule, forwardRef(() => ReviewModule)],
   controllers: [AIController],
   providers: [
     AISanitizerService,

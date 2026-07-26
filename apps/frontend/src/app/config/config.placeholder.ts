@@ -1,0 +1,1 @@
+export const CONFIG_MODULE_TOKEN = 'CDL_CONFIG_MODULE';
