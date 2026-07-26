@@ -7,32 +7,37 @@ import { QualityTrendPoint } from '../../../core/services/dashboard.service';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="chart-container">
+    <div class="chart-container card-panel">
       <div class="chart-header">
-        <h4 class="chart-title">Code Quality Score History</h4>
-        <span class="chart-badge">Past {{ data.length }} Data Points</span>
+        <div>
+          <h4 class="chart-title">Code Quality Score History</h4>
+          <p class="chart-subtitle">Historical trend of automated quality reviews</p>
+        </div>
+        <span class="badge badge-primary">Past {{ data.length }} Data Points</span>
       </div>
 
       <div class="svg-wrapper" *ngIf="data && data.length > 0; else emptyState">
         <svg viewBox="0 0 500 150" class="trend-svg">
           <!-- Grid lines -->
-          <line x1="0" y1="30" x2="500" y2="30" stroke="rgba(255,255,255,0.05)" stroke-dasharray="4" />
-          <line x1="0" y1="75" x2="500" y2="75" stroke="rgba(255,255,255,0.05)" stroke-dasharray="4" />
-          <line x1="0" y1="120" x2="500" y2="120" stroke="rgba(255,255,255,0.05)" stroke-dasharray="4" />
+          <line x1="0" y1="30" x2="500" y2="30" stroke="#f1f5f9" stroke-width="1.5" stroke-dasharray="4 4" />
+          <line x1="0" y1="75" x2="500" y2="75" stroke="#f1f5f9" stroke-width="1.5" stroke-dasharray="4 4" />
+          <line x1="0" y1="120" x2="500" y2="120" stroke="#f1f5f9" stroke-width="1.5" stroke-dasharray="4 4" />
 
           <!-- Gradient Area -->
           <defs>
             <linearGradient id="scoreGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#6366f1" stop-opacity="0.4" />
-              <stop offset="100%" stop-color="#6366f1" stop-opacity="0.0" />
+              <stop offset="0%" stop-color="#2563eb" stop-opacity="0.25" />
+              <stop offset="100%" stop-color="#2563eb" stop-opacity="0.0" />
             </linearGradient>
           </defs>
 
           <!-- Score Polyline -->
           <polyline
             fill="url(#scoreGrad)"
-            stroke="#6366f1"
-            stroke-width="3"
+            stroke="#2563eb"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
             [attr.points]="polyPoints"
           />
 
@@ -42,7 +47,9 @@ import { QualityTrendPoint } from '../../../core/services/dashboard.service';
             [attr.cx]="pt.x"
             [attr.cy]="pt.y"
             r="4"
-            fill="#a855f7"
+            fill="#ffffff"
+            stroke="#2563eb"
+            stroke-width="2.5"
           />
         </svg>
 
@@ -54,60 +61,84 @@ import { QualityTrendPoint } from '../../../core/services/dashboard.service';
 
       <ng-template #emptyState>
         <div class="empty-chart">
-          <p>No historical quality data available yet.</p>
+          <div class="empty-icon">📈</div>
+          <p class="empty-title">No historical quality data available yet</p>
+          <p class="empty-desc">Submit new code reviews in the workspace to start tracking codebase quality trends over time.</p>
         </div>
       </ng-template>
     </div>
   `,
   styles: [`
     .chart-container {
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 12px;
-      padding: 1.25rem;
-      backdrop-filter: blur(12px);
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      box-shadow: var(--shadow-sm);
     }
     .chart-header {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1rem;
+      align-items: flex-start;
+      margin-bottom: 1.25rem;
     }
     .chart-title {
       font-size: 1rem;
-      font-weight: 600;
-      color: #f8fafc;
+      font-weight: 700;
+      color: var(--text-primary);
       margin: 0;
+      letter-spacing: -0.01em;
     }
-    .chart-badge {
-      font-size: 0.75rem;
-      padding: 0.25rem 0.6rem;
-      background: rgba(99, 102, 241, 0.15);
-      color: #818cf8;
-      border-radius: 20px;
+    .chart-subtitle {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin: 0.2rem 0 0;
     }
     .svg-wrapper {
       width: 100%;
     }
     .trend-svg {
       width: 100%;
-      height: 150px;
+      height: 160px;
       overflow: visible;
     }
     .chart-footer {
       display: flex;
       justify-content: space-between;
       font-size: 0.75rem;
-      color: #64748b;
+      font-weight: 500;
+      color: var(--text-muted);
       margin-top: 0.5rem;
+      padding-top: 0.5rem;
+      border-top: 1px solid var(--border-subtle);
     }
     .empty-chart {
-      height: 150px;
+      height: 180px;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      color: #64748b;
-      font-size: 0.85rem;
+      text-align: center;
+      background: var(--bg-app);
+      border: 1px dashed var(--border-medium);
+      border-radius: var(--radius-md);
+      padding: 1.5rem;
+    }
+    .empty-icon {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+    }
+    .empty-title {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin: 0 0 0.25rem;
+    }
+    .empty-desc {
+      font-size: 0.775rem;
+      color: var(--text-muted);
+      margin: 0;
+      max-width: 320px;
     }
   `],
 })
@@ -157,3 +188,4 @@ export class QualityTrendChartComponent {
     this.polyPoints = `${firstX},${height} ${pts} ${lastX},${height}`;
   }
 }
+

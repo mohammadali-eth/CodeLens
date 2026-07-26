@@ -7,8 +7,12 @@ import { LanguageDistribution } from '../../../core/services/dashboard.service';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="chart-card">
-      <h4 class="chart-title">Programming Language Distribution</h4>
+    <div class="chart-card card-panel">
+      <div class="header">
+        <h4 class="chart-title">Language Distribution</h4>
+        <span class="badge badge-neutral text-xs">By File Count</span>
+      </div>
+
       <div class="lang-list" *ngIf="data && data.length > 0; else emptyState">
         <div class="lang-item" *ngFor="let item of data">
           <div class="lang-info">
@@ -22,23 +26,33 @@ import { LanguageDistribution } from '../../../core/services/dashboard.service';
       </div>
 
       <ng-template #emptyState>
-        <div class="empty-chart">No language breakdown data.</div>
+        <div class="empty-chart">
+          <span class="empty-icon">💻</span>
+          <p>No language breakdown data</p>
+        </div>
       </ng-template>
     </div>
   `,
   styles: [`
     .chart-card {
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 12px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
       padding: 1.25rem;
-      backdrop-filter: blur(12px);
+      box-shadow: var(--shadow-sm);
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
     }
     .chart-title {
-      font-size: 1rem;
-      font-weight: 600;
-      color: #f8fafc;
-      margin: 0 0 1rem;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin: 0;
+      letter-spacing: -0.01em;
     }
     .lang-list {
       display: flex;
@@ -48,34 +62,43 @@ import { LanguageDistribution } from '../../../core/services/dashboard.service';
     .lang-info {
       display: flex;
       justify-content: space-between;
-      font-size: 0.85rem;
-      margin-bottom: 0.25rem;
+      font-size: 0.8rem;
+      margin-bottom: 0.35rem;
     }
     .lang-name {
-      color: #e2e8f0;
-      font-weight: 500;
+      color: var(--text-secondary);
+      font-weight: 600;
     }
     .lang-count {
-      color: #94a3b8;
+      color: var(--text-muted);
+      font-size: 0.75rem;
     }
     .progress-bar-bg {
-      height: 8px;
-      background: rgba(255, 255, 255, 0.06);
-      border-radius: 4px;
+      height: 6px;
+      background: var(--bg-surface-secondary);
+      border-radius: var(--radius-full);
       overflow: hidden;
     }
     .progress-bar-fill {
       height: 100%;
-      border-radius: 4px;
-      transition: width 0.4s ease;
+      border-radius: var(--radius-full);
+      transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     }
     .empty-chart {
       height: 120px;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      color: #64748b;
-      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      background: var(--bg-app);
+      border: 1px dashed var(--border-medium);
+      border-radius: var(--radius-md);
+      gap: 0.25rem;
+    }
+    .empty-icon {
+      font-size: 1.25rem;
     }
   `],
 })
@@ -84,15 +107,16 @@ export class LanguageChartComponent {
 
   getLangColor(lang: string): string {
     const colors: Record<string, string> = {
-      TYPESCRIPT: '#3178c6',
-      JAVASCRIPT: '#f7df1e',
-      PYTHON: '#3776ab',
-      JAVA: '#b07219',
-      GO: '#00add8',
-      RUST: '#dea584',
-      CPP: '#f34b7d',
-      CSHARP: '#178600',
+      TYPESCRIPT: '#2563eb',
+      JAVASCRIPT: '#f59e0b',
+      PYTHON: '#3b82f6',
+      JAVA: '#d97706',
+      GO: '#0891b2',
+      RUST: '#ea580c',
+      CPP: '#e11d48',
+      CSHARP: '#059669',
     };
-    return colors[lang.toUpperCase()] || '#6366f1';
+    return colors[lang.toUpperCase()] || '#2563eb';
   }
 }
+

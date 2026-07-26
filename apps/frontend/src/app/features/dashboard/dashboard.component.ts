@@ -26,11 +26,22 @@ import { RecentActivityTimelineComponent } from './components/recent-activity-ti
     RecentActivityTimelineComponent,
   ],
   template: `
-    <div class="dashboard-page">
+    <div class="dashboard-page animate-fade-in">
       <header class="dashboard-header">
         <div>
           <h1 class="page-title">Analytics Dashboard</h1>
           <p class="page-subtitle">Real-time code review quality metrics and AI performance analytics</p>
+        </div>
+        <div class="header-filters">
+          <div class="date-badge">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+            <span>Last 30 Days</span>
+          </div>
         </div>
       </header>
 
@@ -40,7 +51,7 @@ import { RecentActivityTimelineComponent } from './components/recent-activity-ti
           label="Total Code Reviews"
           [value]="summary.totalReviews"
           icon="📝"
-          iconBg="rgba(99, 102, 241, 0.15)"
+          iconBg="#eff6ff"
           [subtext]="summary.reviewsToday + ' created today'"
         ></app-stat-card>
 
@@ -48,7 +59,7 @@ import { RecentActivityTimelineComponent } from './components/recent-activity-ti
           label="Avg Quality Score"
           [value]="summary.averageQualityScore + '/100'"
           icon="⭐"
-          iconBg="rgba(234, 179, 8, 0.15)"
+          iconBg="#fffbeb"
           subtext="Overall codebase score"
         ></app-stat-card>
 
@@ -56,7 +67,7 @@ import { RecentActivityTimelineComponent } from './components/recent-activity-ti
           label="Avg Processing Time"
           [value]="(summary.averageProcessingTimeMs / 1000 | number:'1.1-1') + 's'"
           icon="⚡"
-          iconBg="rgba(16, 185, 129, 0.15)"
+          iconBg="#ecfdf5"
           subtext="AI response duration"
         ></app-stat-card>
 
@@ -64,7 +75,7 @@ import { RecentActivityTimelineComponent } from './components/recent-activity-ti
           label="Top Language"
           [value]="summary.mostUsedLanguage || 'N/A'"
           icon="💻"
-          iconBg="rgba(168, 85, 247, 0.15)"
+          iconBg="#f3e8ff"
           [subtext]="summary.favoriteReviewsCount + ' favorite reviews'"
         ></app-stat-card>
       </section>
@@ -89,39 +100,54 @@ import { RecentActivityTimelineComponent } from './components/recent-activity-ti
   `,
   styles: [`
     .dashboard-page {
-      padding: 2rem;
+      padding: 1.75rem 2rem;
       max-width: 1400px;
       margin: 0 auto;
-      color: #f8fafc;
-      font-family: system-ui, -apple-system, sans-serif;
+      width: 100%;
+      box-sizing: border-box;
     }
     .dashboard-header {
-      margin-bottom: 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-bottom: 1.75rem;
     }
     .page-title {
-      font-size: 1.75rem;
+      font-size: 1.5rem;
       font-weight: 700;
+      color: var(--text-primary);
       margin: 0;
-      background: linear-gradient(135deg, #f8fafc 0%, #cbd5e1 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      letter-spacing: -0.02em;
     }
     .page-subtitle {
-      color: #94a3b8;
-      font-size: 0.95rem;
+      color: var(--text-muted);
+      font-size: 0.875rem;
       margin: 0.25rem 0 0;
+    }
+    .date-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      padding: 0.4rem 0.85rem;
+      border-radius: var(--radius-md);
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      box-shadow: var(--shadow-xs);
     }
     .kpi-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
       gap: 1.25rem;
-      margin-bottom: 2rem;
+      margin-bottom: 1.75rem;
     }
     .charts-grid {
       display: grid;
-      grid-template-columns: 2fr 1fr;
+      grid-template-columns: 1.8fr 1fr;
       gap: 1.5rem;
-      margin-bottom: 2rem;
+      margin-bottom: 1.75rem;
     }
     .side-charts {
       display: flex;
@@ -129,7 +155,7 @@ import { RecentActivityTimelineComponent } from './components/recent-activity-ti
       gap: 1.5rem;
     }
     .activity-section {
-      margin-top: 2rem;
+      margin-top: 1.75rem;
     }
 
     @media (max-width: 1024px) {
@@ -174,3 +200,4 @@ export class DashboardComponent implements OnInit {
     });
   }
 }
+

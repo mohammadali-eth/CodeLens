@@ -7,8 +7,12 @@ import { ProviderUsageStat } from '../../../core/services/dashboard.service';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="chart-card">
-      <h4 class="chart-title">AI Provider Usage Breakdown</h4>
+    <div class="chart-card card-panel">
+      <div class="header">
+        <h4 class="chart-title">AI Provider Breakdown</h4>
+        <span class="badge badge-neutral text-xs">Models</span>
+      </div>
+      
       <div class="provider-grid" *ngIf="data && data.length > 0; else emptyState">
         <div class="provider-item" *ngFor="let item of data">
           <div class="provider-header">
@@ -20,34 +24,48 @@ import { ProviderUsageStat } from '../../../core/services/dashboard.service';
       </div>
 
       <ng-template #emptyState>
-        <div class="empty-chart">No provider statistics data.</div>
+        <div class="empty-chart">
+          <span class="empty-icon">🤖</span>
+          <p>No provider statistics data</p>
+        </div>
       </ng-template>
     </div>
   `,
   styles: [`
     .chart-card {
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 12px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
       padding: 1.25rem;
-      backdrop-filter: blur(12px);
+      box-shadow: var(--shadow-sm);
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
     }
     .chart-title {
-      font-size: 1rem;
-      font-weight: 600;
-      color: #f8fafc;
-      margin: 0 0 1rem;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin: 0;
+      letter-spacing: -0.01em;
     }
     .provider-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
       gap: 0.75rem;
     }
     .provider-item {
-      background: rgba(255, 255, 255, 0.02);
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      border-radius: 8px;
-      padding: 0.85rem;
+      background: var(--bg-app);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 0.75rem 0.85rem;
+      transition: border-color 0.15s ease;
+    }
+    .provider-item:hover {
+      border-color: var(--border-medium);
     }
     .provider-header {
       display: flex;
@@ -56,29 +74,39 @@ import { ProviderUsageStat } from '../../../core/services/dashboard.service';
       margin-bottom: 0.25rem;
     }
     .provider-name {
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: #a855f7;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--color-primary);
+      letter-spacing: 0.02em;
     }
     .provider-pct {
-      font-size: 0.95rem;
+      font-size: 0.9rem;
       font-weight: 700;
-      color: #f8fafc;
+      color: var(--text-primary);
     }
     .provider-sub {
-      font-size: 0.75rem;
-      color: #64748b;
+      font-size: 0.7rem;
+      color: var(--text-muted);
     }
     .empty-chart {
       height: 100px;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      color: #64748b;
-      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      background: var(--bg-app);
+      border: 1px dashed var(--border-medium);
+      border-radius: var(--radius-md);
+      gap: 0.25rem;
+    }
+    .empty-icon {
+      font-size: 1.25rem;
     }
   `],
 })
 export class ProviderChartComponent {
   @Input() data: ProviderUsageStat[] = [];
 }
+

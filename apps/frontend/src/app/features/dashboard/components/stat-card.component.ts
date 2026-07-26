@@ -21,46 +21,51 @@ import { CommonModule } from '@angular/common';
     .stat-card {
       display: flex;
       align-items: center;
-      gap: 1.25rem;
-      padding: 1.25rem;
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 12px;
-      backdrop-filter: blur(12px);
-      transition: transform 0.2s ease, border-color 0.2s ease;
+      gap: 1.125rem;
+      padding: 1.25rem 1.35rem;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
     .stat-card:hover {
       transform: translateY(-2px);
-      border-color: rgba(99, 102, 241, 0.4);
+      box-shadow: var(--shadow-md);
+      border-color: var(--border-medium);
     }
     .stat-icon {
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 48px;
-      height: 48px;
-      border-radius: 10px;
-      font-size: 1.5rem;
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius-md);
+      font-size: 1.35rem;
+      flex-shrink: 0;
+      box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.04);
     }
     .stat-content {
       display: flex;
       flex-direction: column;
+      min-width: 0;
     }
     .stat-label {
-      font-size: 0.85rem;
-      color: #94a3b8;
+      font-size: 0.8rem;
+      color: var(--text-muted);
       font-weight: 500;
     }
     .stat-value {
-      font-size: 1.5rem;
+      font-size: 1.45rem;
       font-weight: 700;
-      color: #f8fafc;
+      color: var(--text-primary);
       margin: 0.15rem 0 0;
+      letter-spacing: -0.02em;
     }
     .stat-subtext {
       font-size: 0.75rem;
-      color: #64748b;
-      margin: 0.1rem 0 0;
+      color: var(--text-muted);
+      margin: 0.15rem 0 0;
     }
   `],
 })
@@ -68,6 +73,7 @@ export class StatCardComponent {
   @Input() label!: string;
   @Input() value!: string | number;
   @Input() icon = '📊';
-  @Input() iconBg = 'rgba(99, 102, 241, 0.15)';
+  @Input() iconBg = '#eff6ff';
   @Input() subtext?: string;
 }
+
