@@ -8,21 +8,26 @@
     "packages/*"
   ],
   "scripts": {
-    "format": "npm run format --prefix apps/backend",
-    "backend:dev": "npm run start:dev -w apps/backend",
+    "dev": "concurrently --names \"SERVER,FRONTEND,ADMIN\" --prefix-colors \"blue.bold,cyan.bold,magenta.bold\" --prefix \"[{name}]\" \"npm run server\" \"npm run frontend\" \"npm run admin\"",
+    "server": "npm run start:dev -w apps/backend",
+    "frontend": "npm run start -w apps/frontend",
+    "admin": "npm run dev -w apps/admin",
+    "backend:dev": "npm run server",
     "backend:build": "npm run build -w apps/backend",
     "shared-dto:build": "npm run build -w packages/shared-dto",
     "build:all": "npm run shared-dto:build && npm run backend:build",
-    "frontend:dev": "npm run start -w apps/frontend",
+    "frontend:dev": "npm run frontend",
     "frontend:build": "npm run build -w apps/frontend",
-    "admin:dev": "npm run dev -w apps/admin",
+    "admin:dev": "npm run admin",
     "admin:build": "npm run build -w apps/admin",
-    "docker:up": "docker-compose up -d",
-    "docker:down": "docker-compose down"
+    "format": "npm run format --prefix apps/backend",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down"
   },
   "devDependencies": {
     "@angular/cli": "^17.3.17",
     "@types/bcrypt": "^6.0.0",
+    "concurrently": "^8.2.2",
     "typescript": "^5.2.2"
   }
 }

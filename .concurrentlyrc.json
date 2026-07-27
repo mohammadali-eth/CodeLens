@@ -1,0 +1,6 @@
+{
+  "prefix": "[{name}]",
+  "prefixColors": ["blue.bold", "cyan.bold", "magenta.bold"],
+  "names": ["SERVER", "FRONTEND", "ADMIN"],
+  "timestampFormat": "HH:mm:ss"
+}
