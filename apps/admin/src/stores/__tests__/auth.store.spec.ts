@@ -27,7 +27,7 @@ vi.mock('../../services/user.service', () => ({
       email: 'admin@codelens.ai',
       firstName: 'Admin',
       lastName: 'User',
-      role: UserRole.SUPER_ADMIN,
+      role: 'SUPER_ADMIN',
       permissions: ['*'],
       accountStatus: 'ACTIVE',
       isActive: true,
