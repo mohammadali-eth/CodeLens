@@ -12,7 +12,7 @@ export type ThemeMode = 'light' | 'dark' | 'system';
 export class ThemeService {
   private static instance: ThemeService;
   private readonly THEME_STORAGE_KEY = 'codelens_admin_theme_mode';
-  private currentMode: ThemeMode = 'system';
+  private currentMode: ThemeMode = 'dark';
 
   private constructor() {
     this.initTheme();
@@ -27,7 +27,7 @@ export class ThemeService {
 
   public initTheme(): void {
     const savedTheme = storageService.getItem<ThemeMode>(this.THEME_STORAGE_KEY);
-    this.currentMode = savedTheme || 'system';
+    this.currentMode = savedTheme || 'dark';
     this.applyTheme(this.currentMode);
 
     // Listen for OS system theme changes if system mode is selected
