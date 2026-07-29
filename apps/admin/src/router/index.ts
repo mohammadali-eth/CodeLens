@@ -1,7 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { routes } from './routes';
 import { useAuthStore } from '../stores/auth.store';
-import { UserRole } from '../models';
+import { permissionGuard } from './guards/permission.guard';
+import { roleGuard } from './guards/role.guard';
 
 export const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -11,8 +12,8 @@ export const router = createRouter({
   },
 });
 
-// Vue Router Guard Pipeline
-router.beforeEach((to, _from, next) => {
+// Vue Router Pipeline Integration
+router.beforeEach(async (to, from, next) => {
   // 1. Dynamic Page Title
   if (to.meta.title) {
     document.title = `${to.meta.title} – CodeLens Admin`;
@@ -21,25 +22,43 @@ router.beforeEach((to, _from, next) => {
   }
 
   const authStore = useAuthStore();
-  const requiresGuest = to.matched.some((r) => r.meta.requiresGuest);
-  const requiresAuth = to.matched.some((r) => r.meta.requiresAuth);
 
-  // 2. Guest Guard (e.g. /login)
+  // 2. Initialize session if uninitialized
+  if (authStore.isInitializing) {
+    await authStore.initializeAuth();
+  }
+
+  // 3. Guest Guard (e.g. /login)
+  const requiresGuest = to.matched.some((r) => r.meta.requiresGuest);
   if (requiresGuest && authStore.isAuthenticated) {
     return next({ name: 'dashboard' });
   }
 
-  // 3. Auth Guard
+  // 4. Auth Guard
+  const requiresAuth = to.matched.some((r) => r.meta.requiresAuth);
   if (requiresAuth && !authStore.isAuthenticated) {
     return next({ name: 'login', query: { redirect: to.fullPath } });
   }
 
-  // 4. Role Guard
-  const requiredRoles = to.meta.roles as UserRole[] | undefined;
-  if (requiresAuth && requiredRoles && requiredRoles.length > 0) {
-    const currentRole = authStore.userRole;
-    if (!currentRole || !requiredRoles.includes(currentRole)) {
-      return next({ name: 'dashboard' });
+  // 5. Role Guard
+  if (requiresAuth && to.meta.roles) {
+    let allowed = false;
+    roleGuard(to, from, (result?: any) => {
+      if (!result) allowed = true;
+    });
+    if (!allowed) {
+      return next({ name: 'unauthorized' });
+    }
+  }
+
+  // 6. Permission Guard
+  if (requiresAuth && to.meta.permission) {
+    let allowed = false;
+    permissionGuard(to, from, (result?: any) => {
+      if (!result) allowed = true;
+    });
+    if (!allowed) {
+      return next({ name: 'unauthorized' });
     }
   }
 

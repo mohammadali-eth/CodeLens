@@ -14,36 +14,48 @@
     </div>
     <LoadingOverlay />
     <Toast />
+    <SessionTimeoutDialog />
   </div>
 </template>
 
 <script setup lang="ts">
+import { onMounted, onUnmounted } from 'vue';
 import AdminSidebar from './components/AdminSidebar.vue';
 import AdminHeader from './components/AdminHeader.vue';
 import AdminFooter from './components/AdminFooter.vue';
 import LoadingOverlay from '../shared/components/LoadingOverlay.vue';
 import Toast from '../shared/components/Toast.vue';
+import SessionTimeoutDialog from '../features/auth/components/SessionTimeoutDialog.vue';
+import { sessionManager } from '../core/auth/session-manager';
+
+onMounted(() => {
+  sessionManager.startMonitoring();
+});
+
+onUnmounted(() => {
+  sessionManager.stopMonitoring();
+});
 </script>
 
 <style scoped>
 .admin-layout-shell {
   display: flex;
+  min-height: 100vh;
   width: 100vw;
-  height: 100vh;
-  overflow: hidden;
   background-color: var(--admin-bg-app);
+  color: var(--admin-text-primary);
+  overflow-x: hidden;
 }
 .main-wrapper {
   flex: 1;
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  overflow: hidden;
+  min-width: 0;
 }
 .page-content {
   flex: 1;
-  overflow-y: auto;
   padding: 1.5rem;
+  overflow-y: auto;
 }
 .fade-enter-active,
 .fade-leave-active {
