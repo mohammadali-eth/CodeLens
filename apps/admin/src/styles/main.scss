@@ -1,0 +1,37 @@
+/* CodeLens Vue 3 Admin Portal Main SCSS Stylesheet */
+:root {
+  --admin-primary: #2563eb;
+  --admin-primary-hover: #1d4ed8;
+  --admin-bg-app: #f8fafc;
+  --admin-bg-surface: #ffffff;
+  --admin-bg-sidebar: #0f172a;
+  --admin-border-color: #e5e7eb;
+  --admin-text-primary: #111827;
+  --admin-text-secondary: #4b5563;
+  --admin-text-muted: #6b7280;
+  --admin-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --admin-radius-md: 8px;
+}
+
+[data-theme='dark'] {
+  --admin-bg-app: #0f172a;
+  --admin-bg-surface: #1e293b;
+  --admin-bg-sidebar: #020617;
+  --admin-border-color: #334155;
+  --admin-text-primary: #f8fafc;
+  --admin-text-secondary: #94a3b8;
+  --admin-text-muted: #64748b;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: var(--admin-bg-app);
+  color: var(--admin-text-primary);
+  line-height: 1.5;
+}
