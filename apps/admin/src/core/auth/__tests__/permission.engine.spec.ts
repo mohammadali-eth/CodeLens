@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { PermissionEngine } from '../permission.engine';
-import { UserRole, AdminPermission } from '../../models';
+import { UserRole, AdminPermission } from '../../../models';
 
 describe('PermissionEngine Unit Tests', () => {
   it('should grant access to SUPER_ADMIN regardless of granted permissions array', () => {
