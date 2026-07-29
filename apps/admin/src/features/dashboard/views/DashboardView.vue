@@ -74,6 +74,12 @@
                 :list-data="providerListData"
               />
             </div>
+
+            <!-- Top Inspected Repositories Table -->
+            <TopRepositoriesPanel />
+
+            <!-- Security & Compliance Audit Summary -->
+            <PlatformAuditSummary />
           </div>
         </div>
 
@@ -107,6 +113,8 @@ import QueueStatusPanel from '../components/QueueStatusPanel.vue';
 import RecentActivityTimeline from '../components/RecentActivityTimeline.vue';
 import NotificationPanel from '../components/NotificationPanel.vue';
 import QuickActionsPanel from '../components/QuickActionsPanel.vue';
+import TopRepositoriesPanel from '../components/TopRepositoriesPanel.vue';
+import PlatformAuditSummary from '../components/PlatformAuditSummary.vue';
 import { useDashboardWebSocket } from '../composables/useDashboardWebSocket';
 
 const dashboardStore = useDashboardStore();
