@@ -26,7 +26,6 @@ export class AdminAuthService {
     const payload = {
       email: credentials.email,
       password: credentials.password,
-      passwordHash: credentials.passwordHash || credentials.password,
     };
 
     const response = await apiClient.post<ApiResponse<AuthTokens>>('/auth/login', payload);
