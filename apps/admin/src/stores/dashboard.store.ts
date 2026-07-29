@@ -38,22 +38,11 @@ export const useDashboardStore = defineStore('dashboard', () => {
 
   // Computed Getters
   const kpiCards = computed<KpiMetric[]>(() => {
-    const s = summary.value || {
-      totalUsers: 148,
-      activeUsers: 36,
-      newRegistrationsThisMonth: 12,
-      totalReviews: 890,
-      reviewsToday: 18,
-      globalAverageQualityScore: 92.4,
-      mostActiveUser: null,
-      mostPopularLanguage: 'TypeScript',
-      mostUsedAIProvider: 'Google Gemini',
-    };
-
-    const totalUsersVal = s.totalUsers || 148;
-    const activeUsersVal = s.activeUsers || 36;
-    const totalReviewsVal = s.totalReviews || 890;
-    const qualityScoreVal = s.globalAverageQualityScore || 92.4;
+    const s = summary.value;
+    const totalUsersVal = s ? s.totalUsers : 148;
+    const activeUsersVal = s ? s.activeUsers : 36;
+    const totalReviewsVal = s ? s.totalReviews : 890;
+    const qualityScoreVal = s ? s.globalAverageQualityScore : 92.4;
 
     return [
       {
