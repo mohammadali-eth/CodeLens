@@ -84,6 +84,10 @@ function getIconSvg(id: string): string {
   color: #f8fafc;
   display: flex;
   flex-direction: column;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
   transition: width 0.2s ease;
   border-right: 1px solid rgba(255, 255, 255, 0.08);
 }

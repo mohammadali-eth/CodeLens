@@ -40,17 +40,19 @@ onUnmounted(() => {
 <style scoped>
 .admin-layout-shell {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
   width: 100vw;
   background-color: var(--admin-bg-app);
   color: var(--admin-text-primary);
-  overflow-x: hidden;
+  overflow: hidden;
 }
 .main-wrapper {
   flex: 1;
   display: flex;
   flex-direction: column;
+  height: 100vh;
   min-width: 0;
+  overflow: hidden;
 }
 .page-content {
   flex: 1;
