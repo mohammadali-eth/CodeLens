@@ -52,7 +52,10 @@ export const useAuthStore = defineStore('auth', () => {
     rememberMe.value = !!credentials.rememberMe;
     const tokenPair = await adminAuthService.login(credentials);
     setTokens(tokenPair);
-    await fetchCurrentUser();
+    const profile = await fetchCurrentUser();
+    if (!profile) {
+      throw new Error('Failed to retrieve administrator user profile.');
+    }
     sessionStatus.value = 'ACTIVE';
     touchSession();
   }

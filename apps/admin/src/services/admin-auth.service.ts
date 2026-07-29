@@ -1,6 +1,6 @@
 import { apiClient } from '../core/api/api-client';
 import { storageService } from '../core/services/storage.service';
-import { ApiResponse, AuthTokens, LoginCredentialsDto } from '../models';
+import { AuthTokens, LoginCredentialsDto } from '../models';
 
 /**
  * AdminAuthService
@@ -28,8 +28,14 @@ export class AdminAuthService {
       password: credentials.password,
     };
 
-    const response = await apiClient.post<ApiResponse<AuthTokens>>('/auth/login', payload);
-    const tokens = response.data.data;
+    const response = await apiClient.post<any>('/auth/login', payload);
+    const data = response.data?.data || response.data;
+    
+    const tokens: AuthTokens = {
+      accessToken: data.accessToken,
+      refreshToken: data.refreshToken,
+      expiresIn: data.expiresIn || 3600,
+    };
 
     // Save Remember Me preference
     this.setRememberMePreference(!!credentials.rememberMe);
@@ -38,8 +44,14 @@ export class AdminAuthService {
   }
 
   public async refreshToken(refreshToken: string): Promise<AuthTokens> {
-    const response = await apiClient.post<ApiResponse<AuthTokens>>('/auth/refresh', { refreshToken });
-    return response.data.data;
+    const response = await apiClient.post<any>('/auth/refresh', { refreshToken });
+    const data = response.data?.data || response.data;
+
+    return {
+      accessToken: data.accessToken,
+      refreshToken: data.refreshToken,
+      expiresIn: data.expiresIn || 3600,
+    };
   }
 
   public async logout(refreshToken?: string): Promise<void> {
