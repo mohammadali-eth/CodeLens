@@ -301,3 +301,20 @@ html, body {
   animation: fadeIn 0.2s ease-out forwards;
 }
 
+/* Accessibility Focus-Visible Ring Standards (WCAG 2.1 AA) */
+:focus-visible {
+  outline: 2px solid var(--color-primary, #2563eb);
+  outline-offset: 2px;
+}
+
+/* Accessibility Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+

@@ -5,3 +5,5 @@
  * Dependencies: Angular Core, HttpClient, Router.
  */
 export const CORE_MODULE_TOKEN = 'CDL_CORE_MODULE';
+export * from './interceptors/http-performance.interceptor';
+
