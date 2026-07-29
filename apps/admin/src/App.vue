@@ -16,7 +16,8 @@ onMounted(() => {
 });
 
 const layoutComponent = computed(() => {
-  return route.meta.layout === 'auth' ? AuthLayout : AdminLayout;
+  const layout = route.meta.layout;
+  return (layout === 'AuthLayout' || layout === 'auth') ? AuthLayout : AdminLayout;
 });
 </script>
 
