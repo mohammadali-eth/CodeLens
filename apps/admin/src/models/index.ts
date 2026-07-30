@@ -6,6 +6,7 @@
 
 export * from './auth.interface';
 export * from './dashboard.interface';
+export * from './user-management.interface';
 
 export interface ApiResponse<T> {
   success: boolean;

@@ -12,3 +12,4 @@ export * from './theme.store';
 export * from './loading.store';
 export * from './notification.store';
 export * from './config.store';
+export * from './users.store';

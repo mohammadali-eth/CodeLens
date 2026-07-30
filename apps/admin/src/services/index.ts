@@ -8,5 +8,6 @@ export const SERVICES_LAYER_TOKEN = 'CDL_ADMIN_SERVICES';
 
 export * from './health.service';
 export * from './admin-auth.service';
+export * from './admin-users.service';
 export * from './user.service';
 export * from './websocket.service';
