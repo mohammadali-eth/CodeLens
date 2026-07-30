@@ -3,6 +3,7 @@ import { AuthModule } from '../auth/auth.module';
 import { DatabaseModule } from '../database/database.module';
 import { AIModule } from '../ai/ai.module';
 import { ReviewController } from './infrastructure/controllers/review.controller';
+import { AdminReviewsController } from './infrastructure/controllers/admin-reviews.controller';
 import { CreateReviewUseCase } from './application/use-cases/create-review.use-case';
 import { GetReviewUseCase } from './application/use-cases/get-review.use-case';
 import { ListReviewsUseCase } from './application/use-cases/list-reviews.use-case';
@@ -14,7 +15,7 @@ import { PrismaReviewRepository } from './infrastructure/adapters/prisma-review-
 
 @Module({
   imports: [AuthModule, DatabaseModule, forwardRef(() => AIModule)],
-  controllers: [ReviewController],
+  controllers: [ReviewController, AdminReviewsController],
   providers: [
     CreateReviewUseCase,
     GetReviewUseCase,

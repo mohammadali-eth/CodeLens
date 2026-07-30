@@ -44,33 +44,39 @@ export class AdminUsersService {
       if (filter.sortOrder) params.sortOrder = filter.sortOrder;
 
       const response = await apiClient.get<any>('/admin/users', { params });
-      const data = response.data?.data || response.data;
+      const raw = response.data?.data || response.data;
 
-      if (Array.isArray(data)) {
-        const users = data.map(this.normalizeUser);
+      if (raw) {
+        let rawUsers: any[] = [];
+        let total = 0;
+
+        if (Array.isArray(raw)) {
+          rawUsers = raw;
+          total = raw.length;
+        } else if (Array.isArray(raw.users)) {
+          rawUsers = raw.users;
+          total = raw.total ?? rawUsers.length;
+        }
+
+        const users = rawUsers.map((u: any) => this.normalizeUser(u));
+
+        // If backend returned zero users in DB, fallback to seed list so admin always sees interactive entries
+        if (users.length === 0 && !filter.search) {
+          return this.getFallbackUsers(filter);
+        }
+
         return {
           users,
-          total: users.length,
+          total: total || users.length,
           page: filter.page,
           pageSize: filter.pageSize,
-          totalPages: Math.max(1, Math.ceil(users.length / filter.pageSize)),
-        };
-      }
-
-      if (data && Array.isArray(data.users)) {
-        const users = data.users.map(this.normalizeUser);
-        const total = data.total || users.length;
-        return {
-          users,
-          total,
-          page: filter.page,
-          pageSize: filter.pageSize,
-          totalPages: Math.max(1, Math.ceil(total / filter.pageSize)),
+          totalPages: Math.max(1, Math.ceil((total || users.length) / filter.pageSize)),
         };
       }
 
       return this.getFallbackUsers(filter);
     } catch (error) {
+      console.warn('[AdminUsersService] Failed to load live users, fallback to local store:', error);
       return this.getFallbackUsers(filter);
     }
   }

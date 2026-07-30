@@ -13,3 +13,4 @@ export * from './loading.store';
 export * from './notification.store';
 export * from './config.store';
 export * from './users.store';
+export * from './reviews.store';

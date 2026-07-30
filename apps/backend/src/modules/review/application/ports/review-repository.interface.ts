@@ -7,6 +7,11 @@ export interface IReviewRepository {
     skip?: number,
     take?: number,
   ): Promise<{ reviews: Review[]; total: number }>;
+  findAll(
+    skip?: number,
+    take?: number,
+    filters?: { status?: string; search?: string; aiProvider?: string; language?: string },
+  ): Promise<{ reviews: Review[]; total: number }>;
   save(review: Review): Promise<Review>;
   update(review: Review): Promise<Review>;
   delete(id: string): Promise<void>;

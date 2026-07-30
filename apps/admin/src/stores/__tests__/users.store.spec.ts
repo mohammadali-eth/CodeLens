@@ -5,7 +5,7 @@ import { adminUsersService } from '../../services/admin-users.service';
 
 vi.mock('../../services/admin-users.service', () => ({
   adminUsersService: {
-    getUsersList: vi.fn().mockResolvedValue({
+    getUsers: vi.fn().mockResolvedValue({
       users: [
         {
           id: 'usr_101',
@@ -137,7 +137,7 @@ describe('useUsersStore', () => {
     const store = useUsersStore();
     await store.fetchUsers();
 
-    expect(adminUsersService.getUsersList).toHaveBeenCalledWith(store.filters);
+    expect(adminUsersService.getUsers).toHaveBeenCalledWith(store.filters);
     expect(store.users.length).toBe(2);
     expect(store.totalUsers).toBe(2);
     expect(store.userStats.total).toBe(2);

@@ -10,4 +10,5 @@ export * from './health.service';
 export * from './admin-auth.service';
 export * from './admin-users.service';
 export * from './user.service';
+export * from './admin-reviews.service';
 export * from './websocket.service';

@@ -137,6 +137,51 @@ export class PrismaReviewRepository implements IReviewRepository {
     };
   }
 
+  async findAll(
+    skip = 0,
+    take = 20,
+    filters?: { status?: string; search?: string; aiProvider?: string; language?: string },
+  ): Promise<{ reviews: Review[]; total: number }> {
+    const where: any = { deletedAt: null };
+
+    if (filters?.status && filters.status !== 'ALL') {
+      where.status = filters.status;
+    }
+
+    if (filters?.aiProvider && filters.aiProvider !== 'ALL') {
+      where.aiProvider = filters.aiProvider.toLowerCase();
+    }
+
+    if (filters?.search) {
+      where.OR = [
+        { title: { contains: filters.search, mode: 'insensitive' } },
+        { description: { contains: filters.search, mode: 'insensitive' } },
+      ];
+    }
+
+    const [dbReviews, total] = await Promise.all([
+      this.prisma.review.findMany({
+        where,
+        skip,
+        take,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          files: {
+            include: {
+              issues: true,
+            },
+          },
+        },
+      }),
+      this.prisma.review.count({ where }),
+    ]);
+
+    return {
+      reviews: (dbReviews as FullDbReview[]).map((r) => this.mapToDomain(r)),
+      total,
+    };
+  }
+
   async save(review: Review): Promise<Review> {
     const dbReview = await this.prisma.review.create({
       data: {
