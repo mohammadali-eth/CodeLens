@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import SystemSettingsPage from '../components/SystemSettingsPage.vue';
+import MonitoringDashboard from '../../monitoring/components/MonitoringDashboard.vue';
 </script>
 
 <template>
   <div class="system-view-container">
-    <SystemSettingsPage />
+    <MonitoringDashboard />
   </div>
 </template>
 
