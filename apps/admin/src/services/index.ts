@@ -12,4 +12,5 @@ export * from './admin-users.service';
 export * from './user.service';
 export * from './admin-reviews.service';
 export * from './admin-monitoring.service';
+export * from './admin-system.service';
 export * from './websocket.service';

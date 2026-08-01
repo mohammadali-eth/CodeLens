@@ -15,3 +15,4 @@ export * from './config.store';
 export * from './users.store';
 export * from './reviews.store';
 export * from './monitoring.store';
+export * from './system-admin.store';

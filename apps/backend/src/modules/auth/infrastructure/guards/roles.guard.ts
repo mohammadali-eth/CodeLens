@@ -34,7 +34,9 @@ export class RolesGuard implements CanActivate {
     // Strict role hierarchy definitions
     const roleHierarchy: Record<UserRole, number> = {
       [UserRole.USER]: 1,
-      [UserRole.ADMIN]: 2,
+      [UserRole.MODERATOR]: 2,
+      [UserRole.ADMIN]: 3,
+      [UserRole.SUPER_ADMIN]: 4,
     };
 
     const userWeight = roleHierarchy[userRole] || 0;

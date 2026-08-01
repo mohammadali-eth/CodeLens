@@ -10,6 +10,7 @@ import { AIModule } from './modules/ai/ai.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { MonitoringModule } from './modules/monitoring/monitoring.module';
+import { AdminSystemController } from './modules/admin/application/controllers/admin-system.controller';
 
 @Module({
   imports: [
@@ -23,7 +24,7 @@ import { MonitoringModule } from './modules/monitoring/monitoring.module';
     DashboardModule,
     MonitoringModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, AdminSystemController],
   providers: [AppService],
 })
 export class AppModule {}
