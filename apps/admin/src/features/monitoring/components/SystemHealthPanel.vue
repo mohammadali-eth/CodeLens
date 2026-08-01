@@ -120,10 +120,11 @@ const statusBadgeClass = (status: SystemHealthStatus) => {
 
 <style lang="scss" scoped>
 .system-health-panel {
-  background: var(--admin-bg-surface, #1e293b);
-  border: 1px solid var(--admin-border-color, #334155);
-  border-radius: 12px;
+  background: var(--admin-bg-surface, #ffffff);
+  border: 1px solid var(--admin-border-color, #e2e8f0);
+  border-radius: var(--admin-radius-md, 10px);
   padding: 1.5rem;
+  box-shadow: var(--admin-shadow-sm);
 }
 
 .panel-header {
@@ -138,13 +139,13 @@ const statusBadgeClass = (status: SystemHealthStatus) => {
 .panel-title {
   font-size: 1.15rem;
   font-weight: 700;
-  color: var(--admin-text-primary, #f8fafc);
+  color: var(--admin-text-primary, #0f172a);
   margin: 0;
 }
 
 .header-subtitle {
   font-size: 0.85rem;
-  color: var(--admin-text-secondary, #94a3b8);
+  color: var(--admin-text-muted, #64748b);
 }
 
 .header-actions {
@@ -155,28 +156,29 @@ const statusBadgeClass = (status: SystemHealthStatus) => {
 
 .status-filter-pills {
   display: flex;
-  background: rgba(15, 23, 42, 0.6);
+  background: var(--admin-bg-app, #f1f5f9);
   padding: 0.2rem;
-  border-radius: 8px;
+  border-radius: var(--admin-radius-sm, 6px);
+  border: 1px solid var(--admin-border-color, #e2e8f0);
 
   .pill-btn {
     background: transparent;
     border: none;
-    color: var(--admin-text-secondary, #94a3b8);
+    color: var(--admin-text-secondary, #334155);
     font-size: 0.78rem;
     font-weight: 600;
     padding: 0.35rem 0.75rem;
-    border-radius: 6px;
+    border-radius: var(--admin-radius-sm, 6px);
     cursor: pointer;
     transition: all 0.2s ease;
 
     &.active {
-      background: var(--admin-primary-color, #3b82f6);
+      background: var(--admin-primary, #2563eb);
       color: #ffffff;
     }
 
-    &.healthy.active { background: #10b981; }
-    &.warning.active { background: #f59e0b; }
+    &.healthy.active { background: var(--admin-success, #10b981); }
+    &.warning.active { background: var(--admin-warning, #f59e0b); }
   }
 }
 
@@ -184,17 +186,17 @@ const statusBadgeClass = (status: SystemHealthStatus) => {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--admin-border-color, #334155);
-  color: var(--admin-text-primary, #f8fafc);
+  background: var(--admin-bg-surface-hover, #f8fafc);
+  border: 1px solid var(--admin-border-color, #e2e8f0);
+  color: var(--admin-text-primary, #0f172a);
   padding: 0.4rem 0.85rem;
-  border-radius: 8px;
+  border-radius: var(--admin-radius-sm, 6px);
   font-size: 0.82rem;
   font-weight: 600;
   cursor: pointer;
 
   &:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--admin-bg-app, #f1f5f9);
   }
 
   .spin-icon {
@@ -211,13 +213,19 @@ const statusBadgeClass = (status: SystemHealthStatus) => {
 }
 
 .component-card {
-  background: rgba(15, 23, 42, 0.4);
-  border: 1px solid var(--admin-border-color, #334155);
-  border-radius: 10px;
+  background: var(--admin-bg-surface-hover, #f8fafc);
+  border: 1px solid var(--admin-border-color, #e2e8f0);
+  border-radius: var(--admin-radius-sm, 8px);
   padding: 1rem;
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    border-color: var(--admin-primary);
+  }
 }
 
 .comp-top {
@@ -229,7 +237,7 @@ const statusBadgeClass = (status: SystemHealthStatus) => {
 .comp-name {
   font-weight: 600;
   font-size: 0.92rem;
-  color: var(--admin-text-primary, #f8fafc);
+  color: var(--admin-text-primary, #0f172a);
 }
 
 .comp-middle {
@@ -237,14 +245,14 @@ const statusBadgeClass = (status: SystemHealthStatus) => {
   justify-content: space-between;
   font-size: 0.82rem;
 
-  .latency-label { color: var(--admin-text-secondary, #94a3b8); }
-  .latency-value { font-weight: 700; color: #10b981; }
-  .latency-value.high-latency { color: #f59e0b; }
+  .latency-label { color: var(--admin-text-muted, #64748b); }
+  .latency-value { font-weight: 700; color: var(--admin-success, #10b981); }
+  .latency-value.high-latency { color: var(--admin-warning, #f59e0b); }
 }
 
 .comp-message {
   font-size: 0.78rem;
-  color: var(--admin-text-secondary, #94a3b8);
+  color: var(--admin-text-secondary, #334155);
   margin: 0;
   white-space: nowrap;
   overflow: hidden;
@@ -257,18 +265,18 @@ const statusBadgeClass = (status: SystemHealthStatus) => {
   align-items: center;
   margin-top: 0.2rem;
   padding-top: 0.5rem;
-  border-top: 1px dashed var(--admin-border-color, #334155);
+  border-top: 1px dashed var(--admin-border-color, #e2e8f0);
   font-size: 0.72rem;
 
   .category-tag {
-    background: rgba(59, 130, 246, 0.1);
-    color: var(--admin-primary-color, #3b82f6);
+    background: var(--admin-primary-glow, rgba(37, 99, 235, 0.1));
+    color: var(--admin-primary, #2563eb);
     padding: 0.15rem 0.4rem;
     border-radius: 4px;
     font-weight: 600;
   }
 
-  .checked-time { color: var(--admin-text-secondary, #94a3b8); }
+  .checked-time { color: var(--admin-text-muted, #64748b); }
 }
 
 .status-badge {
@@ -282,10 +290,10 @@ const statusBadgeClass = (status: SystemHealthStatus) => {
 
   .status-dot { width: 6px; height: 6px; border-radius: 50%; }
 
-  &.badge-healthy { color: #10b981; background: rgba(16, 185, 129, 0.12); .status-dot { background: #10b981; } }
-  &.badge-warning { color: #f59e0b; background: rgba(245, 158, 11, 0.12); .status-dot { background: #f59e0b; } }
-  &.badge-critical { color: #ef4444; background: rgba(239, 68, 68, 0.12); .status-dot { background: #ef4444; } }
-  &.badge-offline { color: #64748b; background: rgba(100, 116, 139, 0.12); .status-dot { background: #64748b; } }
+  &.badge-healthy { color: var(--admin-success, #10b981); background: rgba(16, 185, 129, 0.12); .status-dot { background: var(--admin-success, #10b981); } }
+  &.badge-warning { color: var(--admin-warning, #f59e0b); background: rgba(245, 158, 11, 0.12); .status-dot { background: var(--admin-warning, #f59e0b); } }
+  &.badge-critical { color: var(--admin-danger, #ef4444); background: rgba(239, 68, 68, 0.12); .status-dot { background: var(--admin-danger, #ef4444); } }
+  &.badge-offline { color: var(--admin-text-muted, #64748b); background: rgba(100, 116, 139, 0.12); .status-dot { background: var(--admin-text-muted, #64748b); } }
 }
 
 .health-skeleton-grid {
@@ -295,10 +303,17 @@ const statusBadgeClass = (status: SystemHealthStatus) => {
 
   .health-skeleton-card {
     height: 110px;
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--admin-bg-surface-hover, #f8fafc);
     border-radius: 10px;
     animation: pulse 1.5s infinite;
   }
+}
+
+.empty-state {
+  padding: 2rem;
+  text-align: center;
+  color: var(--admin-text-muted, #64748b);
+  font-size: 0.88rem;
 }
 
 @keyframes spin {

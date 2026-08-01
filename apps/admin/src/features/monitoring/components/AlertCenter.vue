@@ -90,10 +90,11 @@ const severityClass = (severity: AlertSeverity) => {
 
 <style lang="scss" scoped>
 .alert-center-panel {
-  background: var(--admin-bg-surface, #1e293b);
-  border: 1px solid var(--admin-border-color, #334155);
-  border-radius: 12px;
+  background: var(--admin-bg-surface, #ffffff);
+  border: 1px solid var(--admin-border-color, #e2e8f0);
+  border-radius: var(--admin-radius-md, 10px);
   padding: 1.5rem;
+  box-shadow: var(--admin-shadow-sm);
 }
 
 .panel-header {
@@ -106,22 +107,23 @@ const severityClass = (severity: AlertSeverity) => {
 .panel-title {
   font-size: 1.15rem;
   font-weight: 700;
-  color: var(--admin-text-primary, #f8fafc);
+  color: var(--admin-text-primary, #0f172a);
   margin: 0;
 }
 
 .header-subtitle {
   font-size: 0.85rem;
-  color: var(--admin-text-secondary, #94a3b8);
+  color: var(--admin-text-muted, #64748b);
 }
 
 .active-count-badge {
   background: rgba(239, 68, 68, 0.15);
-  color: #ef4444;
+  color: var(--admin-danger, #ef4444);
   font-size: 0.78rem;
   font-weight: 700;
   padding: 0.3rem 0.7rem;
   border-radius: 20px;
+  border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
 .alerts-list {
@@ -131,9 +133,9 @@ const severityClass = (severity: AlertSeverity) => {
 }
 
 .alert-card {
-  background: rgba(15, 23, 42, 0.5);
-  border: 1px solid var(--admin-border-color, #334155);
-  border-left: 4px solid #3b82f6;
+  background: var(--admin-bg-surface-hover, #f8fafc);
+  border: 1px solid var(--admin-border-color, #e2e8f0);
+  border-left: 4px solid var(--admin-primary, #2563eb);
   border-radius: 8px;
   padding: 1rem;
   display: flex;
@@ -146,20 +148,20 @@ const severityClass = (severity: AlertSeverity) => {
   }
 
   &.alert-critical {
-    border-left-color: #ef4444;
+    border-left-color: var(--admin-danger, #ef4444);
     background: rgba(239, 68, 68, 0.05);
-    .severity-tag { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+    .severity-tag { background: rgba(239, 68, 68, 0.2); color: var(--admin-danger, #ef4444); }
   }
 
   &.alert-high {
-    border-left-color: #f59e0b;
+    border-left-color: var(--admin-warning, #f59e0b);
     background: rgba(245, 158, 11, 0.05);
-    .severity-tag { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+    .severity-tag { background: rgba(245, 158, 11, 0.2); color: var(--admin-warning, #f59e0b); }
   }
 
   &.alert-medium {
-    border-left-color: #3b82f6;
-    .severity-tag { background: rgba(59, 130, 246, 0.2); color: #3b82f6; }
+    border-left-color: var(--admin-primary, #2563eb);
+    .severity-tag { background: var(--admin-primary-glow, rgba(37, 99, 235, 0.2)); color: var(--admin-primary, #2563eb); }
   }
 }
 
@@ -188,7 +190,7 @@ const severityClass = (severity: AlertSeverity) => {
 .alert-title {
   font-weight: 700;
   font-size: 0.95rem;
-  color: var(--admin-text-primary, #f8fafc);
+  color: var(--admin-text-primary, #0f172a);
 }
 
 .severity-tag {
@@ -201,7 +203,7 @@ const severityClass = (severity: AlertSeverity) => {
 
 .alert-msg {
   font-size: 0.84rem;
-  color: var(--admin-text-secondary, #94a3b8);
+  color: var(--admin-text-secondary, #334155);
   margin: 0;
 }
 
@@ -209,13 +211,13 @@ const severityClass = (severity: AlertSeverity) => {
   display: flex;
   gap: 0.4rem;
   font-size: 0.75rem;
-  color: var(--admin-text-secondary, #94a3b8);
+  color: var(--admin-text-muted, #64748b);
 }
 
 .ack-btn {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid var(--admin-border-color, #334155);
-  color: var(--admin-text-primary, #f8fafc);
+  background: var(--admin-bg-surface, #ffffff);
+  border: 1px solid var(--admin-border-color, #e2e8f0);
+  color: var(--admin-text-primary, #0f172a);
   padding: 0.35rem 0.75rem;
   border-radius: 6px;
   font-size: 0.78rem;
@@ -223,14 +225,15 @@ const severityClass = (severity: AlertSeverity) => {
   cursor: pointer;
 
   &:hover {
-    background: rgba(59, 130, 246, 0.2);
-    border-color: #3b82f6;
+    background: var(--admin-primary-glow, rgba(37, 99, 235, 0.1));
+    border-color: var(--admin-primary, #2563eb);
+    color: var(--admin-primary, #2563eb);
   }
 }
 
 .ack-status {
   font-size: 0.78rem;
-  color: #10b981;
+  color: var(--admin-success, #10b981);
   font-weight: 600;
 }
 
@@ -241,8 +244,15 @@ const severityClass = (severity: AlertSeverity) => {
 
   .alert-skeleton {
     height: 75px;
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--admin-bg-surface-hover, #f8fafc);
     border-radius: 8px;
   }
+}
+
+.empty-state {
+  padding: 2rem;
+  text-align: center;
+  color: var(--admin-text-muted, #64748b);
+  font-size: 0.88rem;
 }
 </style>

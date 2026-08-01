@@ -12,9 +12,9 @@ const memoryUsagePercent = computed(() => props.metrics?.memoryUsagePercent || 0
 const diskUsagePercent = computed(() => props.metrics?.diskUsagePercent || 0);
 
 const getProgressColor = (percent: number) => {
-  if (percent > 85) return '#ef4444'; // Red
-  if (percent > 70) return '#f59e0b'; // Amber
-  return '#10b981'; // Green
+  if (percent > 85) return 'var(--admin-danger, #ef4444)';
+  if (percent > 70) return 'var(--admin-warning, #f59e0b)';
+  return 'var(--admin-success, #10b981)';
 };
 </script>
 
@@ -117,10 +117,11 @@ const getProgressColor = (percent: number) => {
 
 <style lang="scss" scoped>
 .infrastructure-panel {
-  background: var(--admin-bg-surface, #1e293b);
-  border: 1px solid var(--admin-border-color, #334155);
-  border-radius: 12px;
+  background: var(--admin-bg-surface, #ffffff);
+  border: 1px solid var(--admin-border-color, #e2e8f0);
+  border-radius: var(--admin-radius-md, 10px);
   padding: 1.5rem;
+  box-shadow: var(--admin-shadow-sm);
 }
 
 .panel-header {
@@ -130,13 +131,13 @@ const getProgressColor = (percent: number) => {
 .panel-title {
   font-size: 1.15rem;
   font-weight: 700;
-  color: var(--admin-text-primary, #f8fafc);
+  color: var(--admin-text-primary, #0f172a);
   margin: 0;
 }
 
 .header-subtitle {
   font-size: 0.85rem;
-  color: var(--admin-text-secondary, #94a3b8);
+  color: var(--admin-text-muted, #64748b);
 }
 
 .infra-grid {
@@ -146,13 +147,19 @@ const getProgressColor = (percent: number) => {
 }
 
 .infra-card {
-  background: rgba(15, 23, 42, 0.4);
-  border: 1px solid var(--admin-border-color, #334155);
-  border-radius: 10px;
+  background: var(--admin-bg-surface-hover, #f8fafc);
+  border: 1px solid var(--admin-border-color, #e2e8f0);
+  border-radius: var(--admin-radius-sm, 8px);
   padding: 1.1rem;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    border-color: var(--admin-primary);
+  }
 }
 
 .card-head {
@@ -163,21 +170,22 @@ const getProgressColor = (percent: number) => {
   .metric-title {
     font-size: 0.88rem;
     font-weight: 600;
-    color: var(--admin-text-secondary, #94a3b8);
+    color: var(--admin-text-muted, #64748b);
   }
 
   .metric-val {
     font-size: 1rem;
     font-weight: 700;
-    color: var(--admin-text-primary, #f8fafc);
+    color: var(--admin-text-primary, #0f172a);
   }
 }
 
 .progress-track {
   height: 8px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--admin-bg-app, #f1f5f9);
   border-radius: 4px;
   overflow: hidden;
+  border: 1px solid var(--admin-border-color, #e2e8f0);
 }
 
 .progress-fill {
@@ -196,10 +204,10 @@ const getProgressColor = (percent: number) => {
     justify-content: space-between;
     font-size: 0.82rem;
 
-    .io-label { color: var(--admin-text-secondary, #94a3b8); }
+    .io-label { color: var(--admin-text-muted, #64748b); }
     .io-val { font-weight: 700; }
-    .io-val.rx { color: #3b82f6; }
-    .io-val.tx { color: #10b981; }
+    .io-val.rx { color: var(--admin-primary, #2563eb); }
+    .io-val.tx { color: var(--admin-success, #10b981); }
   }
 }
 
@@ -207,8 +215,8 @@ const getProgressColor = (percent: number) => {
   display: flex;
   justify-content: space-between;
   font-size: 0.75rem;
-  color: var(--admin-text-secondary, #94a3b8);
-  border-top: 1px dashed var(--admin-border-color, #334155);
+  color: var(--admin-text-muted, #64748b);
+  border-top: 1px dashed var(--admin-border-color, #e2e8f0);
   padding-top: 0.5rem;
   margin-top: 0.2rem;
 }
@@ -220,8 +228,15 @@ const getProgressColor = (percent: number) => {
 
   .infra-skeleton {
     height: 100px;
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--admin-bg-surface-hover, #f8fafc);
     border-radius: 10px;
   }
+}
+
+.empty-state {
+  padding: 2rem;
+  text-align: center;
+  color: var(--admin-text-muted, #64748b);
+  font-size: 0.88rem;
 }
 </style>

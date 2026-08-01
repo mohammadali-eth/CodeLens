@@ -78,10 +78,11 @@ defineProps<{
 
 <style lang="scss" scoped>
 .queue-monitor-panel {
-  background: var(--admin-bg-surface, #1e293b);
-  border: 1px solid var(--admin-border-color, #334155);
-  border-radius: 12px;
+  background: var(--admin-bg-surface, #ffffff);
+  border: 1px solid var(--admin-border-color, #e2e8f0);
+  border-radius: var(--admin-radius-md, 10px);
   padding: 1.5rem;
+  box-shadow: var(--admin-shadow-sm);
 }
 
 .panel-header {
@@ -96,13 +97,13 @@ defineProps<{
 .panel-title {
   font-size: 1.15rem;
   font-weight: 700;
-  color: var(--admin-text-primary, #f8fafc);
+  color: var(--admin-text-primary, #0f172a);
   margin: 0;
 }
 
 .header-subtitle {
   font-size: 0.85rem;
-  color: var(--admin-text-secondary, #94a3b8);
+  color: var(--admin-text-muted, #64748b);
 }
 
 .header-badges {
@@ -115,17 +116,20 @@ defineProps<{
   font-weight: 600;
   padding: 0.3rem 0.65rem;
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--admin-text-secondary, #94a3b8);
+  background: var(--admin-bg-app, #f1f5f9);
+  color: var(--admin-text-muted, #64748b);
+  border: 1px solid var(--admin-border-color, #e2e8f0);
 
   &.has-failed {
     background: rgba(245, 158, 11, 0.15);
-    color: #f59e0b;
+    color: var(--admin-warning, #f59e0b);
+    border-color: rgba(245, 158, 11, 0.3);
   }
 
   &.dead-letter.has-dead-letter {
     background: rgba(239, 68, 68, 0.15);
-    color: #ef4444;
+    color: var(--admin-danger, #ef4444);
+    border-color: rgba(239, 68, 68, 0.3);
   }
 }
 
@@ -136,9 +140,9 @@ defineProps<{
 }
 
 .queue-row-card {
-  background: rgba(15, 23, 42, 0.4);
-  border: 1px solid var(--admin-border-color, #334155);
-  border-radius: 10px;
+  background: var(--admin-bg-surface-hover, #f8fafc);
+  border: 1px solid var(--admin-border-color, #e2e8f0);
+  border-radius: var(--admin-radius-sm, 8px);
   padding: 1rem;
   display: flex;
   justify-content: space-between;
@@ -166,13 +170,13 @@ defineProps<{
 .queue-name {
   font-size: 1rem;
   font-weight: 700;
-  color: var(--admin-text-primary, #f8fafc);
+  color: var(--admin-text-primary, #0f172a);
   text-transform: capitalize;
 }
 
 .throughput-label {
   font-size: 0.78rem;
-  color: var(--admin-text-secondary, #94a3b8);
+  color: var(--admin-text-muted, #64748b);
 }
 
 .queue-metrics-pills {
@@ -188,27 +192,27 @@ defineProps<{
   min-width: 70px;
   padding: 0.4rem 0.75rem;
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--admin-bg-surface, #ffffff);
+  border: 1px solid var(--admin-border-color, #e2e8f0);
 
   .pill-label {
     font-size: 0.7rem;
-    color: var(--admin-text-secondary, #94a3b8);
+    color: var(--admin-text-muted, #64748b);
     text-transform: uppercase;
   }
 
   .pill-value {
     font-size: 0.95rem;
     font-weight: 700;
-    color: var(--admin-text-primary, #f8fafc);
+    color: var(--admin-text-primary, #0f172a);
   }
 
-  &.pending .pill-value { color: #3b82f6; }
-  &.active .pill-value { color: #10b981; }
+  &.pending .pill-value { color: var(--admin-primary, #2563eb); }
+  &.active .pill-value { color: var(--admin-success, #10b981); }
   &.failed.has-errors {
     background: rgba(239, 68, 68, 0.12);
     border-color: rgba(239, 68, 68, 0.3);
-    .pill-value { color: #ef4444; }
+    .pill-value { color: var(--admin-danger, #ef4444); }
   }
 }
 
@@ -219,8 +223,15 @@ defineProps<{
 
   .queue-skeleton {
     height: 70px;
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--admin-bg-surface-hover, #f8fafc);
     border-radius: 10px;
   }
+}
+
+.empty-state {
+  padding: 2rem;
+  text-align: center;
+  color: var(--admin-text-muted, #64748b);
+  font-size: 0.88rem;
 }
 </style>

@@ -105,10 +105,11 @@ defineProps<{
 
 <style lang="scss" scoped>
 .ai-analytics-panel {
-  background: var(--admin-bg-surface, #1e293b);
-  border: 1px solid var(--admin-border-color, #334155);
-  border-radius: 12px;
+  background: var(--admin-bg-surface, #ffffff);
+  border: 1px solid var(--admin-border-color, #e2e8f0);
+  border-radius: var(--admin-radius-md, 10px);
   padding: 1.5rem;
+  box-shadow: var(--admin-shadow-sm);
 }
 
 .panel-header {
@@ -118,13 +119,13 @@ defineProps<{
 .panel-title {
   font-size: 1.15rem;
   font-weight: 700;
-  color: var(--admin-text-primary, #f8fafc);
+  color: var(--admin-text-primary, #0f172a);
   margin: 0;
 }
 
 .header-subtitle {
   font-size: 0.85rem;
-  color: var(--admin-text-secondary, #94a3b8);
+  color: var(--admin-text-muted, #64748b);
 }
 
 .ai-content {
@@ -140,9 +141,9 @@ defineProps<{
 }
 
 .ai-summary-card {
-  background: rgba(15, 23, 42, 0.4);
-  border: 1px solid var(--admin-border-color, #334155);
-  border-radius: 10px;
+  background: var(--admin-bg-surface-hover, #f8fafc);
+  border: 1px solid var(--admin-border-color, #e2e8f0);
+  border-radius: var(--admin-radius-sm, 8px);
   padding: 1rem;
   display: flex;
   flex-direction: column;
@@ -151,28 +152,28 @@ defineProps<{
   .card-label {
     font-size: 0.78rem;
     font-weight: 600;
-    color: var(--admin-text-secondary, #94a3b8);
+    color: var(--admin-text-muted, #64748b);
     text-transform: uppercase;
   }
 
   .card-val {
     font-size: 1.4rem;
     font-weight: 700;
-    color: var(--admin-text-primary, #f8fafc);
+    color: var(--admin-text-primary, #0f172a);
 
-    &.text-cost { color: #10b981; }
+    &.text-cost { color: var(--admin-success, #10b981); }
   }
 
   .card-sub {
     font-size: 0.72rem;
-    color: var(--admin-text-secondary, #94a3b8);
+    color: var(--admin-text-muted, #64748b);
   }
 }
 
 .section-subtitle {
   font-size: 0.95rem;
   font-weight: 700;
-  color: var(--admin-text-primary, #f8fafc);
+  color: var(--admin-text-primary, #0f172a);
   margin-bottom: 0.85rem;
 }
 
@@ -183,9 +184,9 @@ defineProps<{
 }
 
 .provider-bar-card {
-  background: rgba(15, 23, 42, 0.4);
-  border: 1px solid var(--admin-border-color, #334155);
-  border-radius: 8px;
+  background: var(--admin-bg-surface-hover, #f8fafc);
+  border: 1px solid var(--admin-border-color, #e2e8f0);
+  border-radius: var(--admin-radius-sm, 8px);
   padding: 0.85rem;
   display: flex;
   flex-direction: column;
@@ -197,18 +198,19 @@ defineProps<{
   justify-content: space-between;
   font-size: 0.85rem;
   font-weight: 600;
-  color: var(--admin-text-primary, #f8fafc);
+  color: var(--admin-text-primary, #0f172a);
 }
 
 .bar-track {
   height: 6px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--admin-bg-app, #f1f5f9);
   border-radius: 3px;
   overflow: hidden;
+  border: 1px solid var(--admin-border-color, #e2e8f0);
 
   .bar-fill {
     height: 100%;
-    background: var(--admin-primary-color, #3b82f6);
+    background: var(--admin-primary, #2563eb);
     border-radius: 3px;
   }
 }
@@ -217,9 +219,9 @@ defineProps<{
   display: flex;
   justify-content: space-between;
   font-size: 0.75rem;
-  color: var(--admin-text-secondary, #94a3b8);
+  color: var(--admin-text-muted, #64748b);
 
-  .cost-tag { color: #10b981; font-weight: 600; }
+  .cost-tag { color: var(--admin-success, #10b981); font-weight: 600; }
 }
 
 .table-responsive {
@@ -234,26 +236,26 @@ defineProps<{
 
   th, td {
     padding: 0.75rem 1rem;
-    border-bottom: 1px solid var(--admin-border-color, #334155);
+    border-bottom: 1px solid var(--admin-border-color, #e2e8f0);
   }
 
   th {
-    color: var(--admin-text-secondary, #94a3b8);
+    color: var(--admin-text-muted, #64748b);
     font-weight: 600;
     text-transform: uppercase;
     font-size: 0.75rem;
   }
 
   td {
-    color: var(--admin-text-primary, #f8fafc);
+    color: var(--admin-text-primary, #0f172a);
   }
 
   .font-bold { font-weight: 600; }
-  .cost-val { color: #10b981; font-weight: 700; }
+  .cost-val { color: var(--admin-success, #10b981); font-weight: 700; }
 
   .provider-badge {
-    background: rgba(59, 130, 246, 0.12);
-    color: var(--admin-primary-color, #3b82f6);
+    background: var(--admin-primary-glow, rgba(37, 99, 235, 0.12));
+    color: var(--admin-primary, #2563eb);
     font-size: 0.72rem;
     font-weight: 600;
     padding: 0.15rem 0.45rem;
@@ -263,7 +265,14 @@ defineProps<{
 
 .skeleton-ai-box {
   height: 220px;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--admin-bg-surface-hover, #f8fafc);
   border-radius: 10px;
+}
+
+.empty-state {
+  padding: 2rem;
+  text-align: center;
+  color: var(--admin-text-muted, #64748b);
+  font-size: 0.88rem;
 }
 </style>

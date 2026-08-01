@@ -83,10 +83,11 @@ const logLevelClass = (level: string) => {
 
 <style lang="scss" scoped>
 .log-preview-panel {
-  background: var(--admin-bg-surface, #1e293b);
-  border: 1px solid var(--admin-border-color, #334155);
-  border-radius: 12px;
+  background: var(--admin-bg-surface, #ffffff);
+  border: 1px solid var(--admin-border-color, #e2e8f0);
+  border-radius: var(--admin-radius-md, 10px);
   padding: 1.5rem;
+  box-shadow: var(--admin-shadow-sm);
 }
 
 .panel-header {
@@ -101,35 +102,36 @@ const logLevelClass = (level: string) => {
 .panel-title {
   font-size: 1.15rem;
   font-weight: 700;
-  color: var(--admin-text-primary, #f8fafc);
+  color: var(--admin-text-primary, #0f172a);
   margin: 0;
 }
 
 .header-subtitle {
   font-size: 0.85rem;
-  color: var(--admin-text-secondary, #94a3b8);
+  color: var(--admin-text-muted, #64748b);
 }
 
 .log-tabs {
   display: flex;
-  background: rgba(15, 23, 42, 0.6);
+  background: var(--admin-bg-app, #f1f5f9);
   padding: 0.2rem;
-  border-radius: 8px;
+  border-radius: var(--admin-radius-sm, 6px);
+  border: 1px solid var(--admin-border-color, #e2e8f0);
 
   .tab-btn {
     background: transparent;
     border: none;
-    color: var(--admin-text-secondary, #94a3b8);
+    color: var(--admin-text-secondary, #334155);
     font-size: 0.78rem;
     font-weight: 600;
     padding: 0.35rem 0.75rem;
-    border-radius: 6px;
+    border-radius: var(--admin-radius-sm, 6px);
     cursor: pointer;
     text-transform: capitalize;
     transition: all 0.2s ease;
 
     &.active {
-      background: var(--admin-primary-color, #3b82f6);
+      background: var(--admin-primary, #2563eb);
       color: #ffffff;
     }
   }
@@ -137,10 +139,10 @@ const logLevelClass = (level: string) => {
 
 .terminal-window {
   background: #090d16;
-  border: 1px solid #1e293b;
-  border-radius: 8px;
+  border: 1px solid var(--admin-border-color, #1e293b);
+  border-radius: var(--admin-radius-sm, 8px);
   overflow: hidden;
-  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+  font-family: var(--admin-font-mono, monospace);
 }
 
 .terminal-header {

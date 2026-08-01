@@ -143,7 +143,7 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 1.75rem;
-  padding: 1.5rem;
+  padding: 0;
 }
 
 .dashboard-header-bar {
@@ -157,14 +157,14 @@ onUnmounted(() => {
 .dashboard-title {
   font-size: 1.4rem;
   font-weight: 800;
-  color: var(--admin-text-primary, #f8fafc);
+  color: var(--admin-text-primary, #0f172a);
   margin: 0;
   letter-spacing: -0.02em;
 }
 
 .last-updated {
   font-size: 0.8rem;
-  color: var(--admin-text-secondary, #94a3b8);
+  color: var(--admin-text-muted, #64748b);
 }
 
 .header-right {
@@ -178,29 +178,29 @@ onUnmounted(() => {
   align-items: center;
   gap: 0.4rem;
   font-size: 0.82rem;
-  color: var(--admin-text-secondary, #94a3b8);
+  color: var(--admin-text-muted, #64748b);
   cursor: pointer;
 
-  input { accent-color: var(--admin-primary-color, #3b82f6); }
+  input { accent-color: var(--admin-primary, #2563eb); }
 }
 
 .primary-refresh-btn {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  background: var(--admin-primary-color, #3b82f6);
+  background: var(--admin-primary, #2563eb);
   color: #ffffff;
   border: none;
   padding: 0.55rem 1.1rem;
-  border-radius: 8px;
+  border-radius: var(--admin-radius-sm, 6px);
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+  box-shadow: var(--admin-shadow-sm);
   transition: background-color 0.2s ease, transform 0.1s ease;
 
   &:hover:not(:disabled) {
-    background: #2563eb;
+    background: var(--admin-primary-hover, #1d4ed8);
     transform: translateY(-1px);
   }
 
@@ -214,9 +214,9 @@ onUnmounted(() => {
 .error-banner {
   background: rgba(239, 68, 68, 0.15);
   border: 1px solid rgba(239, 68, 68, 0.3);
-  color: #ef4444;
+  color: var(--admin-danger, #ef4444);
   padding: 0.75rem 1rem;
-  border-radius: 8px;
+  border-radius: var(--admin-radius-sm, 6px);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -224,7 +224,7 @@ onUnmounted(() => {
   .dismiss-btn {
     background: transparent;
     border: none;
-    color: #ef4444;
+    color: var(--admin-danger, #ef4444);
     font-weight: 700;
     cursor: pointer;
   }

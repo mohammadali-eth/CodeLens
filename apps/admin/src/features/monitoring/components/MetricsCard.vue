@@ -120,16 +120,17 @@ const statusBadgeClass = computed(() => {
 
 <style lang="scss" scoped>
 .metrics-card-wrapper {
-  background-color: var(--admin-bg-surface, #1e293b);
-  border: 1px solid var(--admin-border-color, #334155);
-  border-radius: 12px;
+  background-color: var(--admin-bg-surface, #ffffff);
+  border: 1px solid var(--admin-border-color, #e2e8f0);
+  border-radius: var(--admin-radius-md, 10px);
   padding: 1.25rem;
+  box-shadow: var(--admin-shadow-sm);
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
-    border-color: var(--admin-primary-color, #3b82f6);
+    box-shadow: var(--admin-shadow-md);
+    border-color: var(--admin-primary);
   }
 }
 
@@ -146,9 +147,9 @@ const statusBadgeClass = computed(() => {
 }
 
 .card-label {
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: var(--admin-text-secondary, #94a3b8);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--admin-text-muted, #64748b);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -156,8 +157,8 @@ const statusBadgeClass = computed(() => {
 .card-icon-box {
   width: 38px;
   height: 38px;
-  border-radius: 8px;
-  background: rgba(59, 130, 246, 0.1);
+  border-radius: var(--admin-radius-sm, 6px);
+  background: var(--admin-primary-glow, rgba(37, 99, 235, 0.1));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -165,7 +166,7 @@ const statusBadgeClass = computed(() => {
   .feather-icon {
     width: 20px;
     height: 20px;
-    stroke: var(--admin-primary-color, #3b82f6);
+    stroke: var(--admin-primary, #2563eb);
   }
 }
 
@@ -177,7 +178,7 @@ const statusBadgeClass = computed(() => {
 .card-value {
   font-size: 1.65rem;
   font-weight: 700;
-  color: var(--admin-text-primary, #f8fafc);
+  color: var(--admin-text-primary, #0f172a);
   letter-spacing: -0.02em;
 }
 
@@ -196,17 +197,17 @@ const statusBadgeClass = computed(() => {
   border-radius: 4px;
 
   &.trend-up {
-    color: #10b981;
+    color: var(--admin-success, #10b981);
     background: rgba(16, 185, 129, 0.12);
   }
 
   &.trend-down {
-    color: #ef4444;
+    color: var(--admin-danger, #ef4444);
     background: rgba(239, 68, 68, 0.12);
   }
 
   &.trend-neutral {
-    color: #94a3b8;
+    color: var(--admin-text-muted, #64748b);
     background: rgba(148, 163, 184, 0.12);
   }
 }
@@ -228,27 +229,27 @@ const statusBadgeClass = computed(() => {
   }
 
   &.badge-healthy {
-    color: #10b981;
+    color: var(--admin-success, #10b981);
     background: rgba(16, 185, 129, 0.15);
-    .status-dot { background-color: #10b981; }
+    .status-dot { background-color: var(--admin-success, #10b981); }
   }
 
   &.badge-warning {
-    color: #f59e0b;
+    color: var(--admin-warning, #f59e0b);
     background: rgba(245, 158, 11, 0.15);
-    .status-dot { background-color: #f59e0b; }
+    .status-dot { background-color: var(--admin-warning, #f59e0b); }
   }
 
   &.badge-critical {
-    color: #ef4444;
+    color: var(--admin-danger, #ef4444);
     background: rgba(239, 68, 68, 0.15);
-    .status-dot { background-color: #ef4444; }
+    .status-dot { background-color: var(--admin-danger, #ef4444); }
   }
 
   &.badge-offline {
-    color: #64748b;
+    color: var(--admin-text-muted, #64748b);
     background: rgba(100, 116, 139, 0.15);
-    .status-dot { background-color: #64748b; }
+    .status-dot { background-color: var(--admin-text-muted, #64748b); }
   }
 }
 
@@ -258,7 +259,7 @@ const statusBadgeClass = computed(() => {
   gap: 0.6rem;
 
   .skeleton-line {
-    background: linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 75%);
+    background: linear-gradient(90deg, rgba(148,163,184,0.1) 25%, rgba(148,163,184,0.2) 50%, rgba(148,163,184,0.1) 75%);
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
     border-radius: 4px;
