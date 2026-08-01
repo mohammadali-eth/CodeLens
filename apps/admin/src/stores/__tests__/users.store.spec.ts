@@ -43,53 +43,28 @@ vi.mock('../../services/admin-users.service', () => ({
       totalPages: 1,
     }),
     getUserById: vi.fn().mockResolvedValue({
-      user: {
-        id: 'usr_101',
-        email: 'admin@codelens.ai',
-        username: 'admin',
-        role: 'SUPER_ADMIN',
-        status: 'ACTIVE',
-        isEmailVerified: true,
-        createdAt: new Date().toISOString(),
-        reviewsCount: 42,
-        chatsCount: 15,
-        reportsCount: 5,
-      },
-      sessions: [
-        {
-          id: 'sess_1',
-          userId: 'usr_101',
-          device: 'MacBook Pro 16"',
-          browser: 'Chrome 122',
-          ipAddress: '192.168.1.1',
-          lastActiveAt: new Date().toISOString(),
-          isCurrent: true,
-        },
-      ],
-      auditLogs: [
-        {
-          id: 'log_1',
-          userId: 'usr_101',
-          action: 'USER_LOGIN_SUCCESS',
-          details: 'User authenticated successfully',
-          createdAt: new Date().toISOString(),
-        },
-      ],
+      id: 'usr_101',
+      email: 'admin@codelens.ai',
+      username: 'admin',
+      role: 'SUPER_ADMIN',
+      status: 'ACTIVE',
+      isEmailVerified: true,
+      createdAt: new Date().toISOString(),
+      reviewsCount: 42,
+      chatsCount: 15,
+      reportsCount: 5,
     }),
     updateUserStatus: vi.fn().mockResolvedValue({
-      success: true,
-      user: {
-        id: 'usr_102',
-        email: 'dev@codelens.ai',
-        username: 'dev_user',
-        role: 'USER',
-        status: 'SUSPENDED',
-        isEmailVerified: true,
-        createdAt: new Date().toISOString(),
-        reviewsCount: 12,
-        chatsCount: 3,
-        reportsCount: 1,
-      },
+      id: 'usr_102',
+      email: 'dev@codelens.ai',
+      username: 'dev_user',
+      role: 'USER',
+      status: 'SUSPENDED',
+      isEmailVerified: true,
+      createdAt: new Date().toISOString(),
+      reviewsCount: 12,
+      chatsCount: 3,
+      reportsCount: 1,
     }),
     updateUser: vi.fn().mockResolvedValue({
       success: true,
@@ -106,6 +81,26 @@ vi.mock('../../services/admin-users.service', () => ({
         reportsCount: 1,
       },
     }),
+    getUserAuditLogs: vi.fn().mockResolvedValue([
+      {
+        id: 'log_1',
+        userId: 'usr_101',
+        action: 'USER_LOGIN_SUCCESS',
+        details: 'User authenticated successfully',
+        createdAt: new Date().toISOString(),
+      },
+    ]),
+    getUserSessions: vi.fn().mockResolvedValue([
+      {
+        id: 'sess_1',
+        userId: 'usr_101',
+        device: 'MacBook Pro 16"',
+        browser: 'Chrome 122',
+        ipAddress: '192.168.1.1',
+        lastActiveAt: new Date().toISOString(),
+        isCurrent: true,
+      },
+    ]),
     deleteUser: vi.fn().mockResolvedValue({
       success: true,
       id: 'usr_102',
@@ -130,7 +125,7 @@ describe('useUsersStore', () => {
     expect(store.selectedUser).toBeNull();
     expect(store.selectedUsersCount).toBe(0);
     expect(store.filters.page).toBe(1);
-    expect(store.filters.pageSize).toBe(25);
+    expect(store.filters.pageSize).toBe(10);
   });
 
   it('fetches users list and updates stats', async () => {
