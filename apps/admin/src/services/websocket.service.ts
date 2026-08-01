@@ -72,6 +72,10 @@ export class WebSocketService {
     this.handlers.get(eventName)?.push(handler);
   }
 
+  public subscribe(eventName: string, handler: WebSocketEventHandler): void {
+    this.on(eventName, handler);
+  }
+
   public off(eventName: string, handler: WebSocketEventHandler): void {
     if (!this.handlers.has(eventName)) return;
     const list = this.handlers.get(eventName) || [];
@@ -79,6 +83,10 @@ export class WebSocketService {
     if (index > -1) {
       list.splice(index, 1);
     }
+  }
+
+  public unsubscribe(eventName: string, handler: WebSocketEventHandler): void {
+    this.off(eventName, handler);
   }
 
   public disconnect(): void {

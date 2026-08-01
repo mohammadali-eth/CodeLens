@@ -9,6 +9,7 @@ import { UploadModule } from './modules/upload/upload.module';
 import { AIModule } from './modules/ai/ai.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { MonitoringModule } from './modules/monitoring/monitoring.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
     AIModule,
     ChatModule,
     DashboardModule,
+    MonitoringModule,
   ],
   controllers: [AppController],
   providers: [AppService],
