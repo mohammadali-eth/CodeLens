@@ -76,4 +76,13 @@ const themeStore = useThemeStore();
   background-color: var(--admin-bg-app);
   color: var(--admin-primary);
 }
+
+@media (max-width: 640px) {
+  .admin-header {
+    padding: 0 0.75rem;
+  }
+  .header-left, .header-right {
+    gap: 0.5rem;
+  }
+}
 </style>

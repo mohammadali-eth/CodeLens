@@ -10,7 +10,7 @@
       <span v-if="!isCollapsed" class="brand-title">CodeLens <span class="badge">ADMIN</span></span>
     </div>
 
-    <nav class="sidebar-nav">
+    <nav class="sidebar-nav" aria-label="Main Navigation">
       <div class="nav-section-label" v-if="!isCollapsed">MAIN MENU</div>
       <router-link
         v-for="item in navItems"
@@ -184,5 +184,14 @@ function getIconSvg(id: string): string {
 .collapse-toggle:hover {
   color: #f8fafc;
   background-color: rgba(255, 255, 255, 0.06);
+}
+
+@media (max-width: 768px) {
+  .admin-sidebar {
+    width: 64px !important;
+  }
+  .brand-title, .nav-label, .toggle-text, .nav-section-label {
+    display: none !important;
+  }
 }
 </style>
