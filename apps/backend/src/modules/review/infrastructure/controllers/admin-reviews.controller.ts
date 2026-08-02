@@ -85,14 +85,22 @@ export class AdminReviewsController {
   @Get('stats')
   async getReviewStats() {
     const { reviews, total } = await this.reviewRepository.findAll(0, 1000);
-    const completedReviews = reviews.filter((r) => r.status === 'COMPLETED').length;
+    const completedReviews = reviews.filter(
+      (r) => r.status === 'COMPLETED',
+    ).length;
     const failedReviews = reviews.filter((r) => r.status === 'FAILED').length;
-    
+
     const scores = reviews.map((r) => r.score || 85);
-    const avgScore = scores.length > 0 ? (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1) : '86.4';
+    const avgScore =
+      scores.length > 0
+        ? (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1)
+        : '86.4';
 
     const times = reviews.map((r) => r.processingTimeMs || 1420);
-    const avgTime = times.length > 0 ? Math.round(times.reduce((a, b) => a + b, 0) / times.length) : 1480;
+    const avgTime =
+      times.length > 0
+        ? Math.round(times.reduce((a, b) => a + b, 0) / times.length)
+        : 1480;
 
     return {
       totalReviews: total || 1248,
@@ -103,14 +111,34 @@ export class AdminReviewsController {
       aiProviderDistribution: [
         { provider: 'GEMINI', count: Math.ceil(total * 0.5), percentage: 50.0 },
         { provider: 'OPENAI', count: Math.ceil(total * 0.3), percentage: 30.0 },
-        { provider: 'ANTHROPIC', count: Math.ceil(total * 0.15), percentage: 15.0 },
-        { provider: 'DEEPSEEK', count: Math.ceil(total * 0.05), percentage: 5.0 },
+        {
+          provider: 'ANTHROPIC',
+          count: Math.ceil(total * 0.15),
+          percentage: 15.0,
+        },
+        {
+          provider: 'DEEPSEEK',
+          count: Math.ceil(total * 0.05),
+          percentage: 5.0,
+        },
       ],
       languageDistribution: [
-        { language: 'TypeScript', count: Math.ceil(total * 0.4), percentage: 40.0 },
-        { language: 'Python', count: Math.ceil(total * 0.25), percentage: 25.0 },
+        {
+          language: 'TypeScript',
+          count: Math.ceil(total * 0.4),
+          percentage: 40.0,
+        },
+        {
+          language: 'Python',
+          count: Math.ceil(total * 0.25),
+          percentage: 25.0,
+        },
         { language: 'Go', count: Math.ceil(total * 0.2), percentage: 20.0 },
-        { language: 'JavaScript', count: Math.ceil(total * 0.15), percentage: 15.0 },
+        {
+          language: 'JavaScript',
+          count: Math.ceil(total * 0.15),
+          percentage: 15.0,
+        },
       ],
     };
   }

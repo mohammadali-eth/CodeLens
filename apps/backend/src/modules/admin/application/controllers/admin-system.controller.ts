@@ -1,4 +1,13 @@
-import { Controller, Get, Patch, Post, Delete, Body, Param, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Patch,
+  Post,
+  Delete,
+  Body,
+  Param,
+  UseGuards,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../../../auth/infrastructure/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../auth/infrastructure/guards/roles.guard';
 import { Roles } from '../../../auth/infrastructure/decorators/roles.decorator';
@@ -26,8 +35,10 @@ export class AdminSystemController {
   updateGeneralSettings(@Body() body: any) {
     return {
       platformName: body.platformName || 'CodeLens AI Admin Portal',
-      organizationName: body.organizationName || 'Invix Enterprise Technologies',
-      defaultTimeZone: body.defaultTimeZone || 'UTC (Coordinated Universal Time)',
+      organizationName:
+        body.organizationName || 'Invix Enterprise Technologies',
+      defaultTimeZone:
+        body.defaultTimeZone || 'UTC (Coordinated Universal Time)',
       defaultLanguage: body.defaultLanguage || 'en-US',
       logoUrl: body.logoUrl || '/assets/logo.svg',
       faviconUrl: body.faviconUrl || '/favicon.ico',
@@ -47,7 +58,11 @@ export class AdminSystemController {
       maxLoginAttempts: 5,
       lockoutDurationMinutes: 15,
       jwtExpiration: '24h',
-      allowedOrigins: ['http://localhost:3000', 'http://localhost:5173', 'https://codelens.ai'],
+      allowedOrigins: [
+        'http://localhost:3000',
+        'http://localhost:5173',
+        'https://codelens.ai',
+      ],
     };
   }
 
@@ -62,7 +77,10 @@ export class AdminSystemController {
       maxLoginAttempts: body.maxLoginAttempts ?? 5,
       lockoutDurationMinutes: body.lockoutDurationMinutes ?? 15,
       jwtExpiration: '24h',
-      allowedOrigins: body.allowedOrigins || ['http://localhost:3000', 'http://localhost:5173'],
+      allowedOrigins: body.allowedOrigins || [
+        'http://localhost:3000',
+        'http://localhost:5173',
+      ],
     };
   }
 
@@ -78,7 +96,11 @@ export class AdminSystemController {
         isDefault: true,
         status: 'HEALTHY',
         responseTimeMs: 840,
-        availableModels: ['gemini-1.5-pro', 'gemini-1.5-flash', 'gemini-1.0-ultra'],
+        availableModels: [
+          'gemini-1.5-pro',
+          'gemini-1.5-flash',
+          'gemini-1.0-ultra',
+        ],
         activeModel: 'gemini-1.5-pro',
         apiKeyMasked: 'AIzaSyAbg897mfaL••••••••••••',
         maxTokenLimit: 128000,
@@ -104,7 +126,10 @@ export class AdminSystemController {
         isDefault: false,
         status: 'HEALTHY',
         responseTimeMs: 1100,
-        availableModels: ['claude-3-5-sonnet-20241022', 'claude-3-haiku-20240307'],
+        availableModels: [
+          'claude-3-5-sonnet-20241022',
+          'claude-3-haiku-20240307',
+        ],
         activeModel: 'claude-3-5-sonnet-20241022',
         apiKeyMasked: 'sk-ant-api03-••••••••••••',
         maxTokenLimit: 200000,
@@ -144,7 +169,11 @@ export class AdminSystemController {
 
   @Post('ai-providers/:id/test')
   testAIProvider(@Param('id') id: string) {
-    return { success: true, latencyMs: 340, message: `Ping to AI provider ${id} successful.` };
+    return {
+      success: true,
+      latencyMs: 340,
+      message: `Ping to AI provider ${id} successful.`,
+    };
   }
 
   // 4. Feature Flags
@@ -155,7 +184,8 @@ export class AdminSystemController {
         id: 'flag_realtime_ws',
         name: 'Realtime WebSockets Telemetry',
         key: 'enableWebSockets',
-        description: 'Streams system metrics heartbeats and notifications to active sessions.',
+        description:
+          'Streams system metrics heartbeats and notifications to active sessions.',
         isEnabled: true,
         environment: 'production',
         rolloutPercentage: 100,
@@ -166,7 +196,8 @@ export class AdminSystemController {
         id: 'flag_ai_chat',
         name: 'Interactive AI Inline Assistant',
         key: 'enableAIChatAssistant',
-        description: 'Enables interactive multi-turn code review discussion sidebar.',
+        description:
+          'Enables interactive multi-turn code review discussion sidebar.',
         isEnabled: true,
         environment: 'production',
         rolloutPercentage: 100,
@@ -177,7 +208,8 @@ export class AdminSystemController {
         id: 'flag_automated_pdf',
         name: 'Automated PDF Export Engine',
         key: 'enablePdfExport',
-        description: 'Allows users and admins to generate downloadable PDF audit reports.',
+        description:
+          'Allows users and admins to generate downloadable PDF audit reports.',
         isEnabled: true,
         environment: 'production',
         rolloutPercentage: 100,
@@ -188,7 +220,8 @@ export class AdminSystemController {
         id: 'flag_deepseek_r1',
         name: 'DeepSeek R1 Experimental Model',
         key: 'enableDeepSeekEngine',
-        description: 'Enables advanced reasoning code review model for beta testers.',
+        description:
+          'Enables advanced reasoning code review model for beta testers.',
         isEnabled: false,
         environment: 'staging',
         rolloutPercentage: 25,
@@ -302,7 +335,9 @@ export class AdminSystemController {
       keyPrefix: 'cl_live_new',
       scopes: body.scopes || ['reviews.read'],
       createdAt: new Date().toISOString(),
-      expiresAt: body.expiresInDays ? new Date(Date.now() + body.expiresInDays * 86400000).toISOString() : null,
+      expiresAt: body.expiresInDays
+        ? new Date(Date.now() + body.expiresInDays * 86400000).toISOString()
+        : null,
       lastUsedAt: null,
       isRevoked: false,
       fullSecretKey: secret,
@@ -355,7 +390,8 @@ export class AdminSystemController {
   getMaintenanceConfig() {
     return {
       isMaintenanceEnabled: false,
-      message: 'CodeLens is currently undergoing scheduled platform upgrades. We will be back online shortly.',
+      message:
+        'CodeLens is currently undergoing scheduled platform upgrades. We will be back online shortly.',
       allowedIpAddresses: ['127.0.0.1', '192.168.1.100'],
       allowedRoles: ['SUPER_ADMIN'],
       scheduledStartAt: null,
@@ -405,7 +441,10 @@ export class AdminSystemController {
 
   @Post('email/test')
   sendTestEmail(@Body() body: any) {
-    return { success: true, message: `Test diagnostic email sent to ${body.to || 'admin@codelens.ai'}.` };
+    return {
+      success: true,
+      message: `Test diagnostic email sent to ${body.to || 'admin@codelens.ai'}.`,
+    };
   }
 
   // 11. Platform About Info

@@ -140,7 +140,12 @@ export class PrismaReviewRepository implements IReviewRepository {
   async findAll(
     skip = 0,
     take = 20,
-    filters?: { status?: string; search?: string; aiProvider?: string; language?: string },
+    filters?: {
+      status?: string;
+      search?: string;
+      aiProvider?: string;
+      language?: string;
+    },
   ): Promise<{ reviews: Review[]; total: number }> {
     const where: any = { deletedAt: null };
 

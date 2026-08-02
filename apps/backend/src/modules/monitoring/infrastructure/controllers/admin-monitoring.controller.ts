@@ -30,13 +30,69 @@ export class AdminMonitoringController {
       offlineCount: 0,
       lastUpdated: now,
       components: [
-        { id: 'h-1', name: 'Backend API Engine', category: 'INFRASTRUCTURE', status: 'HEALTHY', latencyMs: 18, lastChecked: now, message: `NestJS REST API running on Port 4000` },
-        { id: 'h-2', name: 'PostgreSQL Database', category: 'DATABASE', status: 'HEALTHY', latencyMs: 8, lastChecked: now, message: `Prisma ORM active (${userCount} users, ${reviewCount} reviews in DB)` },
-        { id: 'h-3', name: 'Redis Cache Cluster', category: 'DATABASE', status: 'HEALTHY', latencyMs: 3, lastChecked: now, message: 'In-memory cache pool operating at < 5ms' },
-        { id: 'h-4', name: 'BullMQ Job Queues', category: 'QUEUE', status: 'HEALTHY', latencyMs: 12, lastChecked: now, message: 'Background worker concurrency nominal' },
-        { id: 'h-5', name: 'WebSocket Gateway', category: 'GATEWAY', status: 'HEALTHY', latencyMs: 6, lastChecked: now, message: 'Real-time telemetry stream open' },
-        { id: 'h-6', name: 'Google Gemini Pro AI', category: 'AI_PROVIDER', status: 'HEALTHY', latencyMs: 820, lastChecked: now, message: 'API quota active (0.95 confidence level)' },
-        { id: 'h-7', name: 'DeepSeek R1 Engine', category: 'AI_PROVIDER', status: 'WARNING', latencyMs: 1420, lastChecked: now, message: 'Elevated latency under concurrent review processing' },
+        {
+          id: 'h-1',
+          name: 'Backend API Engine',
+          category: 'INFRASTRUCTURE',
+          status: 'HEALTHY',
+          latencyMs: 18,
+          lastChecked: now,
+          message: `NestJS REST API running on Port 4000`,
+        },
+        {
+          id: 'h-2',
+          name: 'PostgreSQL Database',
+          category: 'DATABASE',
+          status: 'HEALTHY',
+          latencyMs: 8,
+          lastChecked: now,
+          message: `Prisma ORM active (${userCount} users, ${reviewCount} reviews in DB)`,
+        },
+        {
+          id: 'h-3',
+          name: 'Redis Cache Cluster',
+          category: 'DATABASE',
+          status: 'HEALTHY',
+          latencyMs: 3,
+          lastChecked: now,
+          message: 'In-memory cache pool operating at < 5ms',
+        },
+        {
+          id: 'h-4',
+          name: 'BullMQ Job Queues',
+          category: 'QUEUE',
+          status: 'HEALTHY',
+          latencyMs: 12,
+          lastChecked: now,
+          message: 'Background worker concurrency nominal',
+        },
+        {
+          id: 'h-5',
+          name: 'WebSocket Gateway',
+          category: 'GATEWAY',
+          status: 'HEALTHY',
+          latencyMs: 6,
+          lastChecked: now,
+          message: 'Real-time telemetry stream open',
+        },
+        {
+          id: 'h-6',
+          name: 'Google Gemini Pro AI',
+          category: 'AI_PROVIDER',
+          status: 'HEALTHY',
+          latencyMs: 820,
+          lastChecked: now,
+          message: 'API quota active (0.95 confidence level)',
+        },
+        {
+          id: 'h-7',
+          name: 'DeepSeek R1 Engine',
+          category: 'AI_PROVIDER',
+          status: 'WARNING',
+          latencyMs: 1420,
+          lastChecked: now,
+          message: 'Elevated latency under concurrent review processing',
+        },
       ],
     };
   }
@@ -73,9 +129,42 @@ export class AdminMonitoringController {
       totalDeadLetter: 0,
       updatedAt: new Date().toISOString(),
       queues: [
-        { queueName: 'code-analysis', pendingJobs: 8, activeJobs: 4, completedJobs: 9240, failedJobs: 28, delayedJobs: 1, retryJobs: 2, deadLetterJobs: 0, workerThroughputPerSec: 14.5, avgProcessingTimeMs: 1240 },
-        { queueName: 'report-generation', pendingJobs: 4, activeJobs: 2, completedJobs: 3410, failedJobs: 10, delayedJobs: 1, retryJobs: 0, deadLetterJobs: 0, workerThroughputPerSec: 5.2, avgProcessingTimeMs: 850 },
-        { queueName: 'notifications', pendingJobs: 2, activeJobs: 0, completedJobs: 2170, failedJobs: 4, delayedJobs: 0, retryJobs: 0, deadLetterJobs: 0, workerThroughputPerSec: 28.0, avgProcessingTimeMs: 110 },
+        {
+          queueName: 'code-analysis',
+          pendingJobs: 8,
+          activeJobs: 4,
+          completedJobs: 9240,
+          failedJobs: 28,
+          delayedJobs: 1,
+          retryJobs: 2,
+          deadLetterJobs: 0,
+          workerThroughputPerSec: 14.5,
+          avgProcessingTimeMs: 1240,
+        },
+        {
+          queueName: 'report-generation',
+          pendingJobs: 4,
+          activeJobs: 2,
+          completedJobs: 3410,
+          failedJobs: 10,
+          delayedJobs: 1,
+          retryJobs: 0,
+          deadLetterJobs: 0,
+          workerThroughputPerSec: 5.2,
+          avgProcessingTimeMs: 850,
+        },
+        {
+          queueName: 'notifications',
+          pendingJobs: 2,
+          activeJobs: 0,
+          completedJobs: 2170,
+          failedJobs: 4,
+          delayedJobs: 0,
+          retryJobs: 0,
+          deadLetterJobs: 0,
+          workerThroughputPerSec: 28.0,
+          avgProcessingTimeMs: 110,
+        },
       ],
     };
   }
@@ -93,15 +182,68 @@ export class AdminMonitoringController {
       avgLatencyMs: 980,
       failureRatePercent: 0.45,
       providerDistribution: [
-        { provider: 'GEMINI', callsCount: 9200, tokensUsed: 3100000, percentage: 50.5, costEstimate: 18.50, avgLatencyMs: 820, errorCount: 12 },
-        { provider: 'OPENAI', callsCount: 5100, tokensUsed: 1800000, percentage: 29.3, costEstimate: 21.40, avgLatencyMs: 1120, errorCount: 18 },
-        { provider: 'ANTHROPIC', callsCount: 2600, tokensUsed: 890000, percentage: 14.5, costEstimate: 6.80, avgLatencyMs: 940, errorCount: 5 },
-        { provider: 'DEEPSEEK', callsCount: 1550, tokensUsed: 350000, percentage: 5.7, costEstimate: 1.55, avgLatencyMs: 1480, errorCount: 8 },
+        {
+          provider: 'GEMINI',
+          callsCount: 9200,
+          tokensUsed: 3100000,
+          percentage: 50.5,
+          costEstimate: 18.5,
+          avgLatencyMs: 820,
+          errorCount: 12,
+        },
+        {
+          provider: 'OPENAI',
+          callsCount: 5100,
+          tokensUsed: 1800000,
+          percentage: 29.3,
+          costEstimate: 21.4,
+          avgLatencyMs: 1120,
+          errorCount: 18,
+        },
+        {
+          provider: 'ANTHROPIC',
+          callsCount: 2600,
+          tokensUsed: 890000,
+          percentage: 14.5,
+          costEstimate: 6.8,
+          avgLatencyMs: 940,
+          errorCount: 5,
+        },
+        {
+          provider: 'DEEPSEEK',
+          callsCount: 1550,
+          tokensUsed: 350000,
+          percentage: 5.7,
+          costEstimate: 1.55,
+          avgLatencyMs: 1480,
+          errorCount: 8,
+        },
       ],
       modelBreakdown: [
-        { model: 'gemini-1.5-pro', provider: 'GEMINI', promptTokens: 2100000, completionTokens: 1000000, totalTokens: 3100000, estimatedCostUsd: 18.50 },
-        { model: 'gpt-4o', provider: 'OPENAI', promptTokens: 1200000, completionTokens: 600000, totalTokens: 1800000, estimatedCostUsd: 21.40 },
-        { model: 'claude-3-5-sonnet', provider: 'ANTHROPIC', promptTokens: 650000, completionTokens: 240000, totalTokens: 890000, estimatedCostUsd: 6.80 },
+        {
+          model: 'gemini-1.5-pro',
+          provider: 'GEMINI',
+          promptTokens: 2100000,
+          completionTokens: 1000000,
+          totalTokens: 3100000,
+          estimatedCostUsd: 18.5,
+        },
+        {
+          model: 'gpt-4o',
+          provider: 'OPENAI',
+          promptTokens: 1200000,
+          completionTokens: 600000,
+          totalTokens: 1800000,
+          estimatedCostUsd: 21.4,
+        },
+        {
+          model: 'claude-3-5-sonnet',
+          provider: 'ANTHROPIC',
+          promptTokens: 650000,
+          completionTokens: 240000,
+          totalTokens: 890000,
+          estimatedCostUsd: 6.8,
+        },
       ],
       timeSeries: Array.from({ length: 12 }).map((_, i) => ({
         timestamp: `${i * 2}:00`,
@@ -190,7 +332,8 @@ export class AdminMonitoringController {
         id: 'alt-1',
         severity: 'HIGH',
         title: 'DeepSeek AI Response Latency Spike',
-        message: 'Average response latency for DeepSeek R1 provider exceeded 1400ms.',
+        message:
+          'Average response latency for DeepSeek R1 provider exceeded 1400ms.',
         component: 'AI Provider Gateway',
         source: 'AI Monitoring Service',
         timestamp: new Date(now - 1000 * 60 * 12).toISOString(),
@@ -200,7 +343,8 @@ export class AdminMonitoringController {
         id: 'alt-2',
         severity: 'MEDIUM',
         title: 'BullMQ Code-Analysis Queue Backlog',
-        message: '8 waiting jobs pending worker allocation in code-analysis queue.',
+        message:
+          '8 waiting jobs pending worker allocation in code-analysis queue.',
         component: 'BullMQ Queue Manager',
         source: 'Queue Telemetry',
         timestamp: new Date(now - 1000 * 60 * 45).toISOString(),
@@ -210,7 +354,10 @@ export class AdminMonitoringController {
   }
 
   @Get('admin/monitoring/logs')
-  async getLogs(@Query('category') category = 'application', @Query('limit') limit = '50') {
+  async getLogs(
+    @Query('category') category = 'application',
+    @Query('limit') limit = '50',
+  ) {
     const now = Date.now();
     return [
       {
@@ -219,7 +366,8 @@ export class AdminMonitoringController {
         level: 'info',
         category,
         source: 'MonitoringGateway',
-        message: 'Telemetry metrics heartbeat tick emitted to connected WebSocket clients.',
+        message:
+          'Telemetry metrics heartbeat tick emitted to connected WebSocket clients.',
         meta: { activeClients: 4 },
       },
       {
@@ -228,7 +376,8 @@ export class AdminMonitoringController {
         level: 'warn',
         category,
         source: 'PrismaPool',
-        message: 'Database query execution time for review count query took 18ms (>15ms threshold).',
+        message:
+          'Database query execution time for review count query took 18ms (>15ms threshold).',
         meta: { queryTimeMs: 18 },
       },
       {
@@ -237,7 +386,8 @@ export class AdminMonitoringController {
         level: 'info',
         category,
         source: 'AIProviderFactory',
-        message: 'Gemini Pro 1.5 token quota consumption check passed (4.2M tokens remaining).',
+        message:
+          'Gemini Pro 1.5 token quota consumption check passed (4.2M tokens remaining).',
       },
     ];
   }
