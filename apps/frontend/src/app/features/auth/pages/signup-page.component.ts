@@ -2,6 +2,7 @@ import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'cdl-signup-page',
@@ -15,13 +16,13 @@ import { FormsModule } from '@angular/forms';
 
       <div class="signup-card-wrapper animate-fade-in">
         <div class="signup-header">
-          <div class="logo-box">
+          <a routerLink="/" class="logo-box" title="Return to Home">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="#2563EB" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
               <path d="M2 17L12 22L22 17" stroke="#4F46E5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
               <path d="M2 12L12 17L22 12" stroke="#0891B2" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
-          </div>
+          </a>
           <h1 class="auth-title">Create your Account</h1>
           <p class="auth-subtitle">Start reviewing code with Enterprise AI in seconds</p>
         </div>
@@ -109,7 +110,7 @@ import { FormsModule } from '@angular/forms';
           <div class="form-group">
             <label class="checkbox-label">
               <input type="checkbox" [(ngModel)]="agreeTerms" name="agreeTerms" required />
-              <span>I agree to the <a href="javascript:void(0)">Terms of Service</a> and <a href="javascript:void(0)">Privacy Policy</a></span>
+              <span>I agree to the <a routerLink="/terms">Terms of Service</a> and <a routerLink="/privacy">Privacy Policy</a></span>
             </label>
           </div>
 
@@ -123,6 +124,9 @@ import { FormsModule } from '@angular/forms';
           <p class="signin-prompt">
             Already have an account? <a routerLink="/login" class="signin-link">Sign In</a>
           </p>
+          <div class="home-back-link">
+            <a routerLink="/">← Back to Public Website</a>
+          </div>
         </div>
       </div>
     </div>
@@ -141,6 +145,7 @@ import { FormsModule } from '@angular/forms';
       box-sizing: border-box;
       font-family: 'Inter', -apple-system, sans-serif;
     }
+    :host-context([data-theme="dark"]) .signup-container { background: #0f172a; }
 
     .ambient-glow {
       position: absolute;
@@ -164,11 +169,14 @@ import { FormsModule } from '@angular/forms';
       position: relative;
       z-index: 10;
     }
+    :host-context([data-theme="dark"]) .signup-card-wrapper { background: #1e293b; border-color: #334155; }
 
     .signup-header { display: flex; flex-direction: column; align-items: center; text-align: center; margin-bottom: 1.5rem; }
-    .logo-box { width: 52px; height: 52px; border-radius: 14px; background: #eff6ff; border: 1px solid #dbeafe; display: flex; align-items: center; justify-content: center; margin-bottom: 1rem; }
+    .logo-box { width: 52px; height: 52px; border-radius: 14px; background: #eff6ff; border: 1px solid #dbeafe; display: flex; align-items: center; justify-content: center; margin-bottom: 1rem; text-decoration: none; }
     .auth-title { font-size: 1.5rem; font-weight: 700; color: #111827; margin: 0 0 0.35rem; }
+    :host-context([data-theme="dark"]) .auth-title { color: #ffffff; }
     .auth-subtitle { font-size: 0.875rem; color: #6b7280; margin: 0; }
+    :host-context([data-theme="dark"]) .auth-subtitle { color: #94a3b8; }
 
     .sso-buttons { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.25rem; }
 
@@ -187,15 +195,19 @@ import { FormsModule } from '@angular/forms';
       color: #374151;
       cursor: pointer;
     }
+    :host-context([data-theme="dark"]) .sso-btn { background: #0f172a; border-color: #334155; color: #cbd5e1; }
     .sso-btn:hover { background: #f8fafc; color: #111827; }
 
     .divider { position: relative; text-align: center; margin: 1.25rem 0; }
     .divider::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: #e5e7eb; }
+    :host-context([data-theme="dark"]) .divider::before { background: #334155; }
     .divider-text { position: relative; background: #ffffff; padding: 0 0.75rem; font-size: 0.65rem; font-weight: 700; color: #9ca3af; letter-spacing: 0.08em; }
+    :host-context([data-theme="dark"]) .divider-text { background: #1e293b; }
 
     .signup-form { display: flex; flex-direction: column; gap: 1rem; }
     .form-group { display: flex; flex-direction: column; gap: 0.35rem; }
     .form-label { font-size: 0.825rem; font-weight: 600; color: #374151; }
+    :host-context([data-theme="dark"]) .form-label { color: #cbd5e1; }
 
     .input-relative { position: relative; display: flex; align-items: center; width: 100%; }
     .pwd-input { padding-right: 4.5rem !important; }
@@ -217,18 +229,22 @@ import { FormsModule } from '@angular/forms';
       align-items: center;
       gap: 0.35rem;
       cursor: pointer;
-      transition: all 0.15s ease;
     }
-    .toggle-pwd-btn:hover { background: #dbeafe; color: #1d4ed8; }
 
     .checkbox-label { display: flex; align-items: center; gap: 0.5rem; font-size: 0.775rem; color: #4b5563; cursor: pointer; }
+    :host-context([data-theme="dark"]) .checkbox-label { color: #94a3b8; }
     .checkbox-label a { color: #2563eb; text-decoration: none; }
 
-    .submit-btn { height: 46px; font-size: 0.95rem; font-weight: 600; margin-top: 0.5rem; }
-    .signup-footer { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #f1f5f9; text-align: center; }
+    .submit-btn { height: 46px; font-size: 0.95rem; font-weight: 600; margin-top: 0.5rem; width: 100%; }
+    .signup-footer { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #f1f5f9; text-align: center; display: flex; flex-direction: column; gap: 0.5rem; }
+    :host-context([data-theme="dark"]) .signup-footer { border-top-color: #334155; }
     .signin-prompt { font-size: 0.85rem; color: #6b7280; margin: 0; }
+    :host-context([data-theme="dark"]) .signin-prompt { color: #94a3b8; }
     .signin-link { color: #2563eb; font-weight: 600; text-decoration: none; }
     .signin-link:hover { text-decoration: underline; }
+
+    .home-back-link a { font-size: 0.8rem; color: #6b7280; text-decoration: none; }
+    .home-back-link a:hover { color: #2563eb; text-decoration: underline; }
   `],
 })
 export class SignUpPageComponent {
@@ -239,7 +255,10 @@ export class SignUpPageComponent {
   public isLoading = signal<boolean>(false);
   public showPassword = signal<boolean>(false);
 
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router,
+    private authService: AuthService
+  ) {}
 
   public togglePasswordVisibility(event: MouseEvent): void {
     event.preventDefault();
@@ -247,20 +266,18 @@ export class SignUpPageComponent {
     this.showPassword.update((v) => !v);
   }
 
-  public onSocialSignUp(provider: string): void {
+  public async onSocialSignUp(provider: string): Promise<void> {
     this.isLoading.set(true);
-    setTimeout(() => {
-      this.isLoading.set(false);
-      this.router.navigate(['/dashboard']);
-    }, 600);
+    await this.authService.signup(this.fullName || 'New User', this.email || 'user@company.com', this.password);
+    this.isLoading.set(false);
+    this.router.navigate(['/dashboard']);
   }
 
-  public onSignUp(event: Event): void {
+  public async onSignUp(event: Event): Promise<void> {
     event.preventDefault();
     this.isLoading.set(true);
-    setTimeout(() => {
-      this.isLoading.set(false);
-      this.router.navigate(['/dashboard']);
-    }, 600);
+    await this.authService.signup(this.fullName, this.email, this.password);
+    this.isLoading.set(false);
+    this.router.navigate(['/dashboard']);
   }
 }

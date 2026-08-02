@@ -1,12 +1,13 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { ThemeService } from '../services/theme.service';
+import { AuthService } from '../services/auth.service';
 
 /**
  * TopHeaderComponent
  * Purpose: Sticky Top Control Header Bar inspired by Stripe Dashboard, Vercel, and Linear.
  * Responsibilities: Breadcrumbs, global command palette search trigger (Cmd+K), notification bell, environment tag, and CTA.
- * Dependencies: Angular CommonModule, Angular RouterModule.
  */
 @Component({
   selector: 'cdl-top-header',
@@ -18,7 +19,7 @@ import { RouterModule } from '@angular/router';
       <!-- Breadcrumbs -->
       <div class="header-left">
         <nav class="breadcrumbs">
-          <span class="crumb-root">CodeLens</span>
+          <a routerLink="/" class="crumb-root">CodeLens</a>
           <span class="crumb-separator">/</span>
           <span class="crumb-active">Enterprise Workspace</span>
         </nav>
@@ -42,6 +43,21 @@ import { RouterModule } from '@angular/router';
 
       <!-- Right Action Tools -->
       <div class="header-right">
+        <button class="tool-btn" (click)="themeService.toggleTheme()" title="Toggle Theme" aria-label="Toggle Theme">
+          <svg *ngIf="themeService.currentTheme() === 'dark'" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="5"/>
+            <line x1="12" y1="1" x2="12" y2="3"/>
+            <line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/>
+            <line x1="21" y1="12" x2="23" y2="12"/>
+          </svg>
+          <svg *ngIf="themeService.currentTheme() === 'light'" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+        </button>
+
         <button class="tool-btn" title="System Notifications">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
@@ -76,32 +92,18 @@ import { RouterModule } from '@angular/router';
       z-index: 90;
     }
 
-    .header-left {
-      display: flex;
-      align-items: center;
-      gap: 0.85rem;
+    :host-context([data-theme="dark"]) .cdl-top-header {
+      background: rgba(15, 23, 42, 0.85);
+      border-bottom-color: #334155;
     }
 
-    .breadcrumbs {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-size: 0.85rem;
-    }
-
-    .crumb-root {
-      color: var(--text-muted);
-      font-weight: 500;
-    }
-
-    .crumb-separator {
-      color: var(--border-medium);
-    }
-
-    .crumb-active {
-      color: var(--text-primary);
-      font-weight: 600;
-    }
+    .header-left { display: flex; align-items: center; gap: 0.85rem; }
+    .breadcrumbs { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; }
+    .crumb-root { color: var(--text-muted); font-weight: 500; text-decoration: none; }
+    .crumb-root:hover { color: #2563eb; }
+    .crumb-separator { color: var(--border-medium); }
+    .crumb-active { color: var(--text-primary); font-weight: 600; }
+    :host-context([data-theme="dark"]) .crumb-active { color: #ffffff; }
 
     .env-chip {
       display: inline-flex;
@@ -124,11 +126,7 @@ import { RouterModule } from '@angular/router';
       box-shadow: 0 0 6px var(--success);
     }
 
-    .header-center {
-      flex: 1;
-      max-width: 440px;
-      margin: 0 1.5rem;
-    }
+    .header-center { flex: 1; max-width: 440px; margin: 0 1.5rem; }
 
     .search-command-bar {
       position: relative;
@@ -140,18 +138,14 @@ import { RouterModule } from '@angular/router';
       padding: 0.375rem 0.75rem;
       transition: all 0.15s ease;
     }
+    :host-context([data-theme="dark"]) .search-command-bar { background: #0f172a; border-color: #334155; }
 
     .search-command-bar:focus-within {
       border-color: var(--color-primary);
-      background: #ffffff;
       box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
     }
 
-    .search-icon {
-      color: var(--text-muted);
-      margin-right: 0.5rem;
-      flex-shrink: 0;
-    }
+    .search-icon { color: var(--text-muted); margin-right: 0.5rem; flex-shrink: 0; }
 
     .search-input {
       flex: 1;
@@ -161,10 +155,9 @@ import { RouterModule } from '@angular/router';
       font-size: 0.85rem;
       outline: none;
     }
+    :host-context([data-theme="dark"]) .search-input { color: #ffffff; }
 
-    .search-input::placeholder {
-      color: var(--text-subtle);
-    }
+    .search-input::placeholder { color: var(--text-subtle); }
 
     .command-kbd {
       background: #ffffff;
@@ -174,15 +167,11 @@ import { RouterModule } from '@angular/router';
       font-size: 0.6875rem;
       font-weight: 600;
       padding: 0.1rem 0.35rem;
-      font-family: inherit;
       box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
     }
+    :host-context([data-theme="dark"]) .command-kbd { background: #1e293b; border-color: #334155; color: #94a3b8; }
 
-    .header-right {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-    }
+    .header-right { display: flex; align-items: center; gap: 0.75rem; }
 
     .tool-btn {
       position: relative;
@@ -199,6 +188,7 @@ import { RouterModule } from '@angular/router';
       transition: all 0.15s ease;
       box-shadow: var(--shadow-xs);
     }
+    :host-context([data-theme="dark"]) .tool-btn { background: #1e293b; border-color: #334155; color: #cbd5e1; }
 
     .tool-btn:hover {
       background: var(--bg-surface-secondary);
@@ -217,11 +207,12 @@ import { RouterModule } from '@angular/router';
       box-shadow: 0 0 6px var(--color-primary);
     }
 
-    .btn-sm {
-      padding: 0.4rem 0.85rem;
-      font-size: 0.8rem;
-    }
+    .btn-sm { padding: 0.4rem 0.85rem; font-size: 0.8rem; }
   `],
 })
-export class TopHeaderComponent {}
-
+export class TopHeaderComponent {
+  constructor(
+    public themeService: ThemeService,
+    public authService: AuthService
+  ) {}
+}

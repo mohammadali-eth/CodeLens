@@ -1,7 +1,8 @@
 import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterModule } from '@angular/router';
+import { Router, ActivatedRoute, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'cdl-login-page',
@@ -15,13 +16,13 @@ import { FormsModule } from '@angular/forms';
 
       <div class="login-card-wrapper animate-fade-in">
         <div class="login-header">
-          <div class="logo-box">
+          <a routerLink="/" class="logo-box" title="Return to Home">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="#2563EB" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
               <path d="M2 17L12 22L22 17" stroke="#4F46E5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
               <path d="M2 12L12 17L22 12" stroke="#0891B2" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
-          </div>
+          </a>
           <h1 class="auth-title">Welcome to CodeLens</h1>
           <p class="auth-subtitle">Sign in to your Enterprise AI Code Review Workspace</p>
         </div>
@@ -85,13 +86,11 @@ import { FormsModule } from '@angular/forms';
                 (click)="togglePasswordVisibility($event)"
                 [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'"
               >
-                <!-- Eye Open Icon when password is visible -->
                 <svg *ngIf="showPassword()" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                   <circle cx="12" cy="12" r="3"/>
                 </svg>
 
-                <!-- Eye Off Icon when password is hidden -->
                 <svg *ngIf="!showPassword()" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
                   <line x1="1" y1="1" x2="23" y2="23"/>
@@ -122,6 +121,9 @@ import { FormsModule } from '@angular/forms';
             <span class="sec-badge">🔒 SOC2 Type II Certified</span>
             <span class="sec-badge">⚡ 256-bit AES</span>
           </div>
+          <div class="home-back-link">
+            <a routerLink="/">← Back to Public Website</a>
+          </div>
         </div>
       </div>
     </div>
@@ -140,6 +142,8 @@ import { FormsModule } from '@angular/forms';
       box-sizing: border-box;
       font-family: 'Inter', -apple-system, sans-serif;
     }
+
+    :host-context([data-theme="dark"]) .login-container { background: #0f172a; }
 
     .ambient-glow {
       position: absolute;
@@ -176,6 +180,7 @@ import { FormsModule } from '@angular/forms';
       position: relative;
       z-index: 10;
     }
+    :host-context([data-theme="dark"]) .login-card-wrapper { background: #1e293b; border-color: #334155; }
 
     .login-header {
       display: flex;
@@ -196,6 +201,7 @@ import { FormsModule } from '@angular/forms';
       justify-content: center;
       margin-bottom: 1rem;
       box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+      text-decoration: none;
     }
 
     .auth-title {
@@ -205,8 +211,10 @@ import { FormsModule } from '@angular/forms';
       margin: 0 0 0.35rem;
       letter-spacing: -0.02em;
     }
+    :host-context([data-theme="dark"]) .auth-title { color: #ffffff; }
 
     .auth-subtitle { font-size: 0.875rem; color: #6b7280; margin: 0; }
+    :host-context([data-theme="dark"]) .auth-subtitle { color: #94a3b8; }
 
     .sso-buttons { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.25rem; }
 
@@ -226,31 +234,26 @@ import { FormsModule } from '@angular/forms';
       cursor: pointer;
       transition: all 0.15s ease;
     }
-
+    :host-context([data-theme="dark"]) .sso-btn { background: #0f172a; border-color: #334155; color: #cbd5e1; }
     .sso-btn:hover { background: #f8fafc; border-color: #9ca3af; color: #111827; }
 
     .divider { position: relative; text-align: center; margin: 1.5rem 0; }
     .divider::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: #e5e7eb; }
+    :host-context([data-theme="dark"]) .divider::before { background: #334155; }
     .divider-text { position: relative; background: #ffffff; padding: 0 0.75rem; font-size: 0.675rem; font-weight: 700; color: #9ca3af; letter-spacing: 0.08em; }
+    :host-context([data-theme="dark"]) .divider-text { background: #1e293b; }
 
     .login-form { display: flex; flex-direction: column; gap: 1.125rem; }
 
     .form-group { display: flex; flex-direction: column; gap: 0.4rem; }
     .label-row { display: flex; align-items: center; justify-content: space-between; }
     .form-label { font-size: 0.825rem; font-weight: 600; color: #374151; }
+    :host-context([data-theme="dark"]) .form-label { color: #cbd5e1; }
     .forgot-link { font-size: 0.775rem; color: #2563eb; text-decoration: none; font-weight: 500; }
     .forgot-link:hover { text-decoration: underline; }
 
-    .input-relative {
-      position: relative;
-      display: flex;
-      align-items: center;
-      width: 100%;
-    }
-
-    .pwd-input {
-      padding-right: 4.5rem !important;
-    }
+    .input-relative { position: relative; display: flex; align-items: center; width: 100%; }
+    .pwd-input { padding-right: 4.5rem !important; }
 
     .toggle-pwd-btn {
       position: absolute;
@@ -269,18 +272,13 @@ import { FormsModule } from '@angular/forms';
       align-items: center;
       gap: 0.35rem;
       cursor: pointer;
-      transition: all 0.15s ease;
-    }
-
-    .toggle-pwd-btn:hover {
-      background: #dbeafe;
-      color: #1d4ed8;
     }
 
     .form-options { display: flex; align-items: center; }
     .checkbox-label { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; color: #4b5563; cursor: pointer; }
+    :host-context([data-theme="dark"]) .checkbox-label { color: #94a3b8; }
 
-    .submit-btn { height: 46px; font-size: 0.95rem; font-weight: 600; margin-top: 0.5rem; }
+    .submit-btn { height: 46px; font-size: 0.95rem; font-weight: 600; margin-top: 0.5rem; width: 100%; }
 
     .login-footer {
       margin-top: 1.5rem;
@@ -292,13 +290,20 @@ import { FormsModule } from '@angular/forms';
       gap: 0.75rem;
       text-align: center;
     }
+    :host-context([data-theme="dark"]) .login-footer { border-top-color: #334155; }
 
     .signup-prompt { font-size: 0.85rem; color: #6b7280; margin: 0; }
+    :host-context([data-theme="dark"]) .signup-prompt { color: #94a3b8; }
     .signup-link { color: #2563eb; font-weight: 600; text-decoration: none; }
     .signup-link:hover { text-decoration: underline; }
 
     .security-badges { display: flex; gap: 0.5rem; }
     .sec-badge { font-size: 0.675rem; color: #6b7280; background: #f8fafc; border: 1px solid #e2e8f0; padding: 0.15rem 0.5rem; border-radius: 6px; }
+    :host-context([data-theme="dark"]) .sec-badge { background: #0f172a; border-color: #334155; color: #cbd5e1; }
+
+    .home-back-link { margin-top: 0.5rem; }
+    .home-back-link a { font-size: 0.8rem; color: #6b7280; text-decoration: none; }
+    .home-back-link a:hover { color: #2563eb; text-decoration: underline; }
   `],
 })
 export class LoginPageComponent {
@@ -308,7 +313,11 @@ export class LoginPageComponent {
   public isLoading = signal<boolean>(false);
   public showPassword = signal<boolean>(false);
 
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router,
+    private route: ActivatedRoute,
+    private authService: AuthService
+  ) {}
 
   public togglePasswordVisibility(event: MouseEvent): void {
     event.preventDefault();
@@ -316,20 +325,23 @@ export class LoginPageComponent {
     this.showPassword.update((v) => !v);
   }
 
-  public onSocialLogin(provider: string): void {
+  public async onSocialLogin(provider: string): Promise<void> {
     this.isLoading.set(true);
-    setTimeout(() => {
-      this.isLoading.set(false);
-      this.router.navigate(['/dashboard']);
-    }, 600);
+    await this.authService.login(this.email, this.password);
+    this.isLoading.set(false);
+    this.redirectPostLogin();
   }
 
-  public onLogin(event: Event): void {
+  public async onLogin(event: Event): Promise<void> {
     event.preventDefault();
     this.isLoading.set(true);
-    setTimeout(() => {
-      this.isLoading.set(false);
-      this.router.navigate(['/dashboard']);
-    }, 600);
+    await this.authService.login(this.email, this.password);
+    this.isLoading.set(false);
+    this.redirectPostLogin();
+  }
+
+  private redirectPostLogin(): void {
+    const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/dashboard';
+    this.router.navigateByUrl(returnUrl);
   }
 }
