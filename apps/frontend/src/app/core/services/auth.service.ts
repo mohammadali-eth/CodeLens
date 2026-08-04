@@ -1,7 +1,7 @@
 import { Injectable, signal, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Observable, catchError, map, of, tap, throwError, switchMap } from 'rxjs';
+import { Observable, catchError, of, tap, throwError } from 'rxjs';
 
 export interface User {
   id: string;
@@ -25,6 +25,12 @@ export interface RefreshResponse {
   refreshToken: string;
 }
 
+/**
+ * AuthService
+ * Purpose: Enterprise authentication state manager & identity session controller.
+ * Responsibilities: Instant synchronous session hydration from cache, background token verification via GET /users/me,
+ * token refresh orchestration, and secure session destruction on explicit logout.
+ */
 @Injectable({
   providedIn: 'root',
 })
@@ -37,22 +43,45 @@ export class AuthService {
   private readonly REFRESH_TOKEN_KEY = 'codelens_refresh_token';
   private readonly USER_KEY = 'codelens_user_session';
 
-  // Signals for Auth State
+  // Signals for Reactive Auth State
   public currentUser = signal<User | null>(null);
   public isAuthenticated = signal<boolean>(false);
   public isLoadingAuth = signal<boolean>(true);
   public authError = signal<string | null>(null);
 
   constructor() {
+    this.hydrateFromStorage();
     this.initAuthCheck();
   }
 
   /**
-   * Verified startup auth check:
-   * Examines localStorage for existing token, then verifies against /users/me endpoint.
+   * Synchronous Session Hydration:
+   * Immediately restores user profile and authentication status from localStorage on boot
+   * to eliminate blank screens, flashing login screens, or premature route redirects.
+   */
+  private hydrateFromStorage(): void {
+    const token = this.getToken();
+    const cachedUserJson = localStorage.getItem(this.USER_KEY);
+
+    if (token && cachedUserJson) {
+      try {
+        const cachedUser: User = JSON.parse(cachedUserJson);
+        this.currentUser.set(cachedUser);
+        this.isAuthenticated.set(true);
+      } catch (err) {
+        // Invalid JSON cache
+        this.clearAuthStorage();
+        this.clearAuthState();
+      }
+    }
+  }
+
+  /**
+   * Verified Startup Session Verification:
+   * Validates access token and fetches fresh user profile from GET /users/me.
+   * If token is expired, authInterceptor handles refresh automatically.
    */
   public initAuthCheck(): void {
-    this.isLoadingAuth.set(true);
     const token = this.getToken();
 
     if (!token) {
@@ -61,43 +90,27 @@ export class AuthService {
       return;
     }
 
-    // Validate token and fetch fresh user profile from backend
+    this.isLoadingAuth.set(true);
+
+    // Call GET /users/me to verify session against backend
     this.http.get<User>(`${this.API_BASE_URL}/users/me`).pipe(
-      tap((user) => {
+      tap((user: User) => {
         this.setSessionUser(user);
         this.isAuthenticated.set(true);
         this.isLoadingAuth.set(false);
       }),
       catchError((err: HttpErrorResponse) => {
-        // If token is expired, try refreshing
-        const refreshToken = this.getRefreshToken();
-        if (refreshToken) {
-          return this.refreshToken().pipe(
-            switchMap(() => this.http.get<User>(`${this.API_BASE_URL}/users/me`)),
-            tap((user) => {
-              this.setSessionUser(user);
-              this.isAuthenticated.set(true);
-              this.isLoadingAuth.set(false);
-            }),
-            catchError(() => {
-              this.clearAuthStorage();
-              this.clearAuthState();
-              this.isLoadingAuth.set(false);
-              return of(null);
-            })
-          );
-        } else {
-          this.clearAuthStorage();
-          this.clearAuthState();
-          this.isLoadingAuth.set(false);
-          return of(null);
-        }
+        // If GET /users/me fails even after authInterceptor token refresh attempts
+        this.clearAuthStorage();
+        this.clearAuthState();
+        this.isLoadingAuth.set(false);
+        return of(null);
       })
     ).subscribe();
   }
 
   /**
-   * Authenticate user with backend API credentials
+   * Authenticate user credentials against backend API
    */
   public login(email: string, password?: string): Observable<AuthResponse> {
     this.authError.set(null);
@@ -105,7 +118,7 @@ export class AuthService {
       email,
       password,
     }).pipe(
-      tap((res) => {
+      tap((res: AuthResponse) => {
         this.saveTokens(res.accessToken, res.refreshToken);
         this.setSessionUser(res.user);
         this.isAuthenticated.set(true);
@@ -128,9 +141,6 @@ export class AuthService {
       email,
       password,
     }).pipe(
-      tap((user) => {
-        // Optionally auto-login after signup
-      }),
       catchError((error: HttpErrorResponse) => {
         const message = error.error?.message || 'Failed to register account.';
         this.authError.set(message);
@@ -140,7 +150,7 @@ export class AuthService {
   }
 
   /**
-   * Refresh expired Access Token using Refresh Token
+   * Refresh Access Token using Refresh Token
    */
   public refreshToken(): Observable<RefreshResponse> {
     const refreshToken = this.getRefreshToken();
@@ -151,10 +161,10 @@ export class AuthService {
     return this.http.post<RefreshResponse>(`${this.API_BASE_URL}/auth/refresh`, {
       refreshToken,
     }).pipe(
-      tap((res) => {
+      tap((res: RefreshResponse) => {
         this.saveTokens(res.accessToken, res.refreshToken);
       }),
-      catchError((err) => {
+      catchError((err: HttpErrorResponse) => {
         this.clearAuthStorage();
         this.clearAuthState();
         return throwError(() => err);
@@ -163,7 +173,8 @@ export class AuthService {
   }
 
   /**
-   * Logout user, notify backend, clear storage, and redirect
+   * Explicit User Logout Procedure:
+   * Revokes refresh token on backend, clears local storage, resets state signals, and navigates to login page.
    */
   public logout(): void {
     const refreshToken = this.getRefreshToken();
@@ -176,14 +187,16 @@ export class AuthService {
 
     this.clearAuthStorage();
     this.clearAuthState();
-    this.router.navigate(['/']);
+    this.router.navigate(['/login']);
   }
 
   /**
-   * Handle expired tokens or 401 Unauthorized API responses
+   * Handle expired sessions or 401 Unauthorized API responses
    */
   public handleUnauthorized(): void {
-    this.logout();
+    this.clearAuthStorage();
+    this.clearAuthState();
+    this.router.navigate(['/login']);
   }
 
   public getToken(): string | null {

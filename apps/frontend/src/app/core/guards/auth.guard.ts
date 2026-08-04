@@ -5,7 +5,8 @@ import { AuthService } from '../services/auth.service';
 /**
  * Auth Guard
  * Protects private application routes (e.g., /dashboard, /workspace, /settings).
- * If user is not authenticated, redirects to /login with returnUrl parameter.
+ * If user is authenticated or has a valid stored token session, entry is granted immediately.
+ * Otherwise, redirects to /login with returnUrl parameter.
  */
 export const authGuard: CanActivateFn = (route, state) => {
   const authService = inject(AuthService);
@@ -15,7 +16,6 @@ export const authGuard: CanActivateFn = (route, state) => {
     return true;
   }
 
-  // Redirect unauthenticated user to login page
   return router.createUrlTree(['/login'], {
     queryParams: { returnUrl: state.url },
   });
@@ -24,13 +24,13 @@ export const authGuard: CanActivateFn = (route, state) => {
 /**
  * Guest Guard
  * Restricts auth pages (/login, /signup, /forgot-password) for already authenticated users.
- * If user is already authenticated, redirects directly to /dashboard.
+ * If user is already authenticated or has an active token, redirects directly to /dashboard.
  */
 export const guestGuard: CanActivateFn = (route, state) => {
   const authService = inject(AuthService);
   const router = inject(Router);
 
-  if (authService.isAuthenticated()) {
+  if (authService.isAuthenticated() || authService.getToken()) {
     return router.createUrlTree(['/dashboard']);
   }
 

@@ -5,10 +5,11 @@ import {
   HttpErrorResponse,
 } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { catchError, switchMap, throwError } from 'rxjs';
+import { catchError, switchMap, throwError, BehaviorSubject, filter, take } from 'rxjs';
 import { AuthService } from '../services/auth.service';
 
 let isRefreshing = false;
+const refreshTokenSubject = new BehaviorSubject<string | null>(null);
 
 export const authInterceptor: HttpInterceptorFn = (
   req: HttpRequest<unknown>,
@@ -17,8 +18,10 @@ export const authInterceptor: HttpInterceptorFn = (
   const authService = inject(AuthService);
   const token = authService.getToken();
 
-  // Exclude auth endpoints from adding auth header if they don't need it
-  const isAuthEndpoint = req.url.includes('/auth/login') || req.url.includes('/auth/register');
+  const isAuthEndpoint =
+    req.url.includes('/auth/login') ||
+    req.url.includes('/auth/register') ||
+    req.url.includes('/auth/refresh');
 
   let authReq = req;
   if (token && !isAuthEndpoint) {
@@ -31,7 +34,7 @@ export const authInterceptor: HttpInterceptorFn = (
 
   return next(authReq).pipe(
     catchError((error: HttpErrorResponse) => {
-      if (error.status === 401 && !isAuthEndpoint && !req.url.includes('/auth/refresh')) {
+      if (error.status === 401 && !isAuthEndpoint) {
         return handle401Error(authReq, next, authService);
       }
       return throwError(() => error);
@@ -46,11 +49,13 @@ function handle401Error(
 ) {
   if (!isRefreshing) {
     isRefreshing = true;
+    refreshTokenSubject.next(null);
 
     return authService.refreshToken().pipe(
       switchMap((response) => {
         isRefreshing = false;
         if (response && response.accessToken) {
+          refreshTokenSubject.next(response.accessToken);
           const newReq = req.clone({
             setHeaders: {
               Authorization: `Bearer ${response.accessToken}`,
@@ -67,7 +72,19 @@ function handle401Error(
         return throwError(() => refreshError);
       })
     );
+  } else {
+    // Wait until refreshTokenSubject releases new access token
+    return refreshTokenSubject.pipe(
+      filter((token) => token !== null),
+      take(1),
+      switchMap((newToken) => {
+        const newReq = req.clone({
+          setHeaders: {
+            Authorization: `Bearer ${newToken}`,
+          },
+        });
+        return next(newReq);
+      })
+    );
   }
-
-  return next(req);
 }
