@@ -87,12 +87,24 @@ model User {
   email           String           @unique
   password        String
   name            String?
+  username        String?          @unique
+  avatarUrl       String?
+  bio             String?
+  company         String?
+  location        String?
+  website         String?
+  timeZone        String?          @default("UTC")
+  language        String?          @default("en")
+  dateFormat      String?          @default("YYYY-MM-DD")
+  timeFormat      String?          @default("24h")
   role            Role             @default(USER)
   status          UserStatus       @default(PENDING_VERIFICATION)
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
   deletedAt       DateTime?
   refreshTokens   RefreshToken[]
+  sessions        UserSession[]
+  apiKeys         UserApiKey[]
   auditLogs       AuditLog[]
   activities      Activity[]
   reviews         Review[]
@@ -104,6 +116,7 @@ model User {
   updatedSettings SystemSetting[]
 
   @@index([email])
+  @@index([username])
   @@index([status])
   @@index([role])
   @@index([deletedAt])
@@ -111,14 +124,56 @@ model User {
 }
 
 model UserPreference {
-  id                   String  @id @default(uuid())
-  userId               String  @unique
-  user                 User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  theme                String  @default("dark")
-  defaultAIProvider    String  @default("gemini")
-  notificationsEnabled Boolean @default(true)
+  id                   String   @id @default(uuid())
+  userId               String   @unique
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  theme                String   @default("dark")
+  defaultAIProvider    String   @default("gemini")
+  notificationsEnabled Boolean  @default(true)
+  appearance           Json?
+  editor               Json?
+  ai                   Json?
+  notifications        Json?
+  privacy              Json?
+  security             Json?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @default(now()) @updatedAt
 
   @@map("user_preferences")
+}
+
+model UserSession {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deviceName   String
+  browser      String
+  os           String
+  ipAddress    String
+  location     String?
+  isCurrent    Boolean  @default(false)
+  lastActiveAt DateTime @default(now())
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
+  @@map("user_sessions")
+}
+
+model UserApiKey {
+  id          String    @id @default(uuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  keyHint     String
+  keyHash     String
+  permissions String[]  @default(["*"])
+  expiresAt   DateTime?
+  createdAt   DateTime  @default(now())
+  lastUsedAt  DateTime?
+  status      String    @default("ACTIVE")
+
+  @@index([userId])
+  @@map("user_api_keys")
 }
 
 model RefreshToken {

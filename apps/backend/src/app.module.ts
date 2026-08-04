@@ -4,6 +4,7 @@ import { AppService } from './app.service';
 import { DatabaseModule } from './modules/database/database.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
+import { SettingsModule } from './modules/settings/settings.module';
 import { ReviewModule } from './modules/review/review.module';
 import { UploadModule } from './modules/upload/upload.module';
 import { AIModule } from './modules/ai/ai.module';
@@ -17,6 +18,7 @@ import { AdminSystemController } from './modules/admin/application/controllers/a
     DatabaseModule,
     AuthModule,
     UsersModule,
+    SettingsModule,
     ReviewModule,
     UploadModule,
     AIModule,

@@ -1,25 +1,26 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { IUserRepository } from '../../../auth/application/ports/user-repository.interface';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../../../database/prisma.service';
 import { UserProfile } from '../../domain/user-profile.entity';
 
 /**
  * GetUserProfileUseCase
- * Purpose: Self-service profile retrieval.
- * Responsibilities: Fetches active user data and maps to UserProfile.
- * Dependencies: IUserRepository.
+ * Purpose: Self-service user profile retrieval.
+ * Responsibilities: Fetches active user data from Prisma and maps to UserProfile.
+ * Dependencies: PrismaService.
  */
 @Injectable()
 export class GetUserProfileUseCase {
-  constructor(
-    @Inject(IUserRepository)
-    private readonly userRepository: IUserRepository,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async execute(userId: string): Promise<UserProfile> {
-    const user = await this.userRepository.findById(userId);
-    if (!user || user.isDeleted()) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user || user.deletedAt) {
       throw new NotFoundException(`User profile not found`);
     }
-    return UserProfile.fromUser(user);
+
+    return UserProfile.fromDbUser(user);
   }
 }

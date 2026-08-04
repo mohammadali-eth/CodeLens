@@ -13,6 +13,10 @@ export interface UserProfile {
   role: 'SUPER_ADMIN' | 'ADMIN' | 'MODERATOR' | 'USER';
   status: 'ACTIVE' | 'INACTIVE' | 'PENDING_VERIFICATION' | 'SUSPENDED';
   avatarUrl?: string;
+  bio?: string;
+  company?: string;
+  location?: string;
+  website?: string;
   timeZone: string;
   language: string;
   dateFormat: 'YYYY-MM-DD' | 'MM/DD/YYYY' | 'DD/MM/YYYY';
@@ -25,6 +29,11 @@ export interface UpdateUserProfileDto {
   name?: string;
   username?: string;
   email?: string;
+  avatarUrl?: string;
+  bio?: string;
+  company?: string;
+  location?: string;
+  website?: string;
   timeZone?: string;
   language?: string;
   dateFormat?: 'YYYY-MM-DD' | 'MM/DD/YYYY' | 'DD/MM/YYYY';
