@@ -73,10 +73,10 @@ export interface UserSettings {
 
 export const DEFAULT_USER_SETTINGS: UserSettings = {
   appearance: {
-    theme: 'dark',
+    theme: 'light',
     fontSize: 'medium',
     editorFont: "'Fira Code', 'JetBrains Mono', Consolas, monospace",
-    editorTheme: 'vs-dark',
+    editorTheme: 'vs-light',
     compactMode: false,
   },
   editor: {

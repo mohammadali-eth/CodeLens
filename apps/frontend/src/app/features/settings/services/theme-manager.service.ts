@@ -15,7 +15,7 @@ export class ThemeManagerService {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly isBrowser = isPlatformBrowser(this.platformId);
 
-  readonly themeMode = signal<ThemeMode>('dark');
+  readonly themeMode = signal<ThemeMode>('light');
   readonly compactMode = signal<boolean>(false);
   readonly fontSize = signal<'small' | 'medium' | 'large'>('medium');
 
@@ -68,6 +68,8 @@ export class ThemeManagerService {
 
     if (cachedTheme && ['light', 'dark', 'system'].includes(cachedTheme)) {
       this.themeMode.set(cachedTheme);
+    } else {
+      this.themeMode.set('light');
     }
     if (cachedCompact !== null) {
       this.compactMode.set(cachedCompact === 'true');
@@ -81,7 +83,7 @@ export class ThemeManagerService {
     if (this.isBrowser && window.matchMedia) {
       return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
     }
-    return 'dark';
+    return 'light';
   }
 
   private listenToSystemChanges(): void {

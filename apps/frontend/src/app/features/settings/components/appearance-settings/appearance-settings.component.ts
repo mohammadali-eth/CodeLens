@@ -199,10 +199,10 @@ export class AppearanceSettingsComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
 
   readonly form: FormGroup = this.fb.group({
-    theme: ['dark'],
+    theme: ['light'],
     fontSize: ['medium'],
     editorFont: ["'Fira Code', monospace"],
-    editorTheme: ['vs-dark'],
+    editorTheme: ['vs-light'],
     compactMode: [false],
   });
 

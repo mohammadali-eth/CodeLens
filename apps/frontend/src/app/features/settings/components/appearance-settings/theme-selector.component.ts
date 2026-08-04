@@ -279,7 +279,7 @@ import { ThemeMode } from '../../models/user-settings.interface';
   `],
 })
 export class ThemeSelectorComponent {
-  @Input() selectedTheme: ThemeMode = 'dark';
+  @Input() selectedTheme: ThemeMode = 'light';
   @Output() themeSelect = new EventEmitter<ThemeMode>();
 
   onSelect(theme: ThemeMode): void {
