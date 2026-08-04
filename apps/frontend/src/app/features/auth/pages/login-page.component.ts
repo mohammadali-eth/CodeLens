@@ -27,6 +27,15 @@ import { AuthService } from '../../../core/services/auth.service';
           <p class="auth-subtitle">Sign in to your Enterprise AI Code Review Workspace</p>
         </div>
 
+        <div *ngIf="errorMessage()" class="error-banner animate-fade-in" role="alert">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <span>{{ errorMessage() }}</span>
+        </div>
+
         <div class="sso-buttons">
           <button type="button" class="sso-btn" (click)="onSocialLogin('GitHub')">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
@@ -61,6 +70,7 @@ import { AuthService } from '../../../core/services/auth.service';
               [(ngModel)]="email"
               name="email"
               required
+              autocomplete="email"
             />
           </div>
 
@@ -79,6 +89,7 @@ import { AuthService } from '../../../core/services/auth.service';
                 [(ngModel)]="password"
                 name="password"
                 required
+                autocomplete="current-password"
               />
               <button
                 type="button"
@@ -107,7 +118,7 @@ import { AuthService } from '../../../core/services/auth.service';
             </label>
           </div>
 
-          <button type="submit" class="btn btn-primary submit-btn" [disabled]="isLoading()">
+          <button type="submit" class="btn btn-primary submit-btn" [disabled]="isLoading() || !email || !password">
             <span *ngIf="!isLoading()">Sign In to Dashboard</span>
             <span *ngIf="isLoading()">Signing in...</span>
           </button>
@@ -187,7 +198,7 @@ import { AuthService } from '../../../core/services/auth.service';
       flex-direction: column;
       align-items: center;
       text-align: center;
-      margin-bottom: 1.75rem;
+      margin-bottom: 1.5rem;
     }
 
     .logo-box {
@@ -215,6 +226,25 @@ import { AuthService } from '../../../core/services/auth.service';
 
     .auth-subtitle { font-size: 0.875rem; color: #6b7280; margin: 0; }
     :host-context([data-theme="dark"]) .auth-subtitle { color: #94a3b8; }
+
+    .error-banner {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #dc2626;
+      font-size: 0.825rem;
+      font-weight: 500;
+      padding: 0.75rem 1rem;
+      border-radius: 10px;
+      margin-bottom: 1.25rem;
+    }
+    :host-context([data-theme="dark"]) .error-banner {
+      background: rgba(220, 38, 38, 0.15);
+      border-color: rgba(220, 38, 38, 0.3);
+      color: #fca5a5;
+    }
 
     .sso-buttons { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.25rem; }
 
@@ -252,6 +282,29 @@ import { AuthService } from '../../../core/services/auth.service';
     .forgot-link { font-size: 0.775rem; color: #2563eb; text-decoration: none; font-weight: 500; }
     .forgot-link:hover { text-decoration: underline; }
 
+    .form-input {
+      width: 100%;
+      height: 42px;
+      padding: 0 0.875rem;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      color: #111827;
+      background: #ffffff;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      box-sizing: border-box;
+    }
+    :host-context([data-theme="dark"]) .form-input {
+      background: #0f172a;
+      border-color: #334155;
+      color: #f8fafc;
+    }
+    .form-input:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    }
+
     .input-relative { position: relative; display: flex; align-items: center; width: 100%; }
     .pwd-input { padding-right: 4.5rem !important; }
 
@@ -273,12 +326,31 @@ import { AuthService } from '../../../core/services/auth.service';
       gap: 0.35rem;
       cursor: pointer;
     }
+    :host-context([data-theme="dark"]) .toggle-pwd-btn {
+      background: #1e293b;
+      border-color: #334155;
+      color: #60a5fa;
+    }
 
     .form-options { display: flex; align-items: center; }
     .checkbox-label { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; color: #4b5563; cursor: pointer; }
     :host-context([data-theme="dark"]) .checkbox-label { color: #94a3b8; }
 
-    .submit-btn { height: 46px; font-size: 0.95rem; font-weight: 600; margin-top: 0.5rem; width: 100%; }
+    .submit-btn {
+      height: 46px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin-top: 0.5rem;
+      width: 100%;
+      background: #2563eb;
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+    .submit-btn:hover:not(:disabled) { background: #1d4ed8; }
+    .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
     .login-footer {
       margin-top: 1.5rem;
@@ -307,11 +379,12 @@ import { AuthService } from '../../../core/services/auth.service';
   `],
 })
 export class LoginPageComponent {
-  public email = 'm.ali@codelens.io';
-  public password = '••••••••••••';
+  public email = '';
+  public password = '';
   public rememberMe = true;
   public isLoading = signal<boolean>(false);
   public showPassword = signal<boolean>(false);
+  public errorMessage = signal<string | null>(null);
 
   constructor(
     private router: Router,
@@ -325,23 +398,27 @@ export class LoginPageComponent {
     this.showPassword.update((v) => !v);
   }
 
-  public async onSocialLogin(provider: string): Promise<void> {
-    this.isLoading.set(true);
-    await this.authService.login(this.email, this.password);
-    this.isLoading.set(false);
-    this.redirectPostLogin();
+  public onSocialLogin(provider: string): void {
+    this.errorMessage.set(`${provider} Single Sign-On integration requires Enterprise OAuth Client ID configuration.`);
   }
 
-  public async onLogin(event: Event): Promise<void> {
+  public onLogin(event: Event): void {
     event.preventDefault();
-    this.isLoading.set(true);
-    await this.authService.login(this.email, this.password);
-    this.isLoading.set(false);
-    this.redirectPostLogin();
-  }
+    if (!this.email || !this.password) return;
 
-  private redirectPostLogin(): void {
-    const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/dashboard';
-    this.router.navigateByUrl(returnUrl);
+    this.isLoading.set(true);
+    this.errorMessage.set(null);
+
+    this.authService.login(this.email, this.password).subscribe({
+      next: () => {
+        this.isLoading.set(false);
+        const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/dashboard';
+        this.router.navigateByUrl(returnUrl);
+      },
+      error: (err) => {
+        this.isLoading.set(false);
+        this.errorMessage.set(err.message || 'Invalid email or password credentials');
+      },
+    });
   }
 }

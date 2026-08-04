@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -27,6 +27,15 @@ import { AuthService } from '../../../core/services/auth.service';
           <p class="auth-subtitle">Start reviewing code with Enterprise AI in seconds</p>
         </div>
 
+        <div *ngIf="errorMessage()" class="error-banner animate-fade-in" role="alert">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <span>{{ errorMessage() }}</span>
+        </div>
+
         <div class="sso-buttons">
           <button type="button" class="sso-btn" (click)="onSocialSignUp('GitHub')">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
@@ -51,17 +60,32 @@ import { AuthService } from '../../../core/services/auth.service';
         </div>
 
         <form (submit)="onSignUp($event)" class="signup-form">
-          <div class="form-group">
-            <label for="fullname" class="form-label">Full Name</label>
-            <input
-              id="fullname"
-              type="text"
-              class="form-input"
-              placeholder="Mohammad Ali"
-              [(ngModel)]="fullName"
-              name="fullName"
-              required
-            />
+          <div class="name-row">
+            <div class="form-group">
+              <label for="firstName" class="form-label">First Name</label>
+              <input
+                id="firstName"
+                type="text"
+                class="form-input"
+                placeholder="Mohammad"
+                [(ngModel)]="firstName"
+                name="firstName"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="lastName" class="form-label">Last Name</label>
+              <input
+                id="lastName"
+                type="text"
+                class="form-input"
+                placeholder="Ali"
+                [(ngModel)]="lastName"
+                name="lastName"
+                required
+              />
+            </div>
           </div>
 
           <div class="form-group">
@@ -74,6 +98,7 @@ import { AuthService } from '../../../core/services/auth.service';
               [(ngModel)]="email"
               name="email"
               required
+              autocomplete="email"
             />
           </div>
 
@@ -84,27 +109,44 @@ import { AuthService } from '../../../core/services/auth.service';
                 id="password"
                 [attr.type]="showPassword() ? 'text' : 'password'"
                 class="form-input pwd-input"
-                placeholder="Must be at least 8 characters"
+                placeholder="At least 8 characters"
                 [(ngModel)]="password"
                 name="password"
                 required
+                (ngModelChange)="onPasswordInput()"
               />
               <button
                 type="button"
                 class="toggle-pwd-btn"
                 (click)="togglePasswordVisibility($event)"
               >
-                <svg *ngIf="showPassword()" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                  <circle cx="12" cy="12" r="3"/>
-                </svg>
-                <svg *ngIf="!showPassword()" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
-                  <line x1="1" y1="1" x2="23" y2="23"/>
-                </svg>
                 <span>{{ showPassword() ? 'Hide' : 'Show' }}</span>
               </button>
             </div>
+
+            <!-- Password Strength Bar -->
+            <div *ngIf="password.length > 0" class="strength-meter">
+              <div class="strength-bar-bg">
+                <div class="strength-bar-fill" [style.width.%]="strengthPercent()" [class]="strengthClass()"></div>
+              </div>
+              <span class="strength-text">{{ strengthLabel() }}</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="confirmPassword" class="form-label">Confirm Password</label>
+            <input
+              id="confirmPassword"
+              type="password"
+              class="form-input"
+              placeholder="Repeat your password"
+              [(ngModel)]="confirmPassword"
+              name="confirmPassword"
+              required
+            />
+            <span *ngIf="confirmPassword.length > 0 && password !== confirmPassword" class="field-error">
+              Passwords do not match
+            </span>
           </div>
 
           <div class="form-group">
@@ -114,7 +156,11 @@ import { AuthService } from '../../../core/services/auth.service';
             </label>
           </div>
 
-          <button type="submit" class="btn btn-primary submit-btn" [disabled]="isLoading()">
+          <button
+            type="submit"
+            class="btn btn-primary submit-btn"
+            [disabled]="isLoading() || !isFormValid()"
+          >
             <span *ngIf="!isLoading()">Create Enterprise Account</span>
             <span *ngIf="isLoading()">Creating account...</span>
           </button>
@@ -160,7 +206,7 @@ import { AuthService } from '../../../core/services/auth.service';
 
     .signup-card-wrapper {
       width: 100%;
-      max-width: 460px;
+      max-width: 480px;
       background: #ffffff;
       border: 1px solid #e5e7eb;
       border-radius: 16px;
@@ -177,6 +223,25 @@ import { AuthService } from '../../../core/services/auth.service';
     :host-context([data-theme="dark"]) .auth-title { color: #ffffff; }
     .auth-subtitle { font-size: 0.875rem; color: #6b7280; margin: 0; }
     :host-context([data-theme="dark"]) .auth-subtitle { color: #94a3b8; }
+
+    .error-banner {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #dc2626;
+      font-size: 0.825rem;
+      font-weight: 500;
+      padding: 0.75rem 1rem;
+      border-radius: 10px;
+      margin-bottom: 1.25rem;
+    }
+    :host-context([data-theme="dark"]) .error-banner {
+      background: rgba(220, 38, 38, 0.15);
+      border-color: rgba(220, 38, 38, 0.3);
+      color: #fca5a5;
+    }
 
     .sso-buttons { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.25rem; }
 
@@ -205,9 +270,33 @@ import { AuthService } from '../../../core/services/auth.service';
     :host-context([data-theme="dark"]) .divider-text { background: #1e293b; }
 
     .signup-form { display: flex; flex-direction: column; gap: 1rem; }
+    .name-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
     .form-group { display: flex; flex-direction: column; gap: 0.35rem; }
     .form-label { font-size: 0.825rem; font-weight: 600; color: #374151; }
     :host-context([data-theme="dark"]) .form-label { color: #cbd5e1; }
+
+    .form-input {
+      width: 100%;
+      height: 42px;
+      padding: 0 0.875rem;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      color: #111827;
+      background: #ffffff;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      box-sizing: border-box;
+    }
+    :host-context([data-theme="dark"]) .form-input {
+      background: #0f172a;
+      border-color: #334155;
+      color: #f8fafc;
+    }
+    .form-input:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    }
 
     .input-relative { position: relative; display: flex; align-items: center; width: 100%; }
     .pwd-input { padding-right: 4.5rem !important; }
@@ -227,15 +316,71 @@ import { AuthService } from '../../../core/services/auth.service';
       border-radius: 6px;
       display: flex;
       align-items: center;
-      gap: 0.35rem;
       cursor: pointer;
+    }
+    :host-context([data-theme="dark"]) .toggle-pwd-btn {
+      background: #1e293b;
+      border-color: #334155;
+      color: #60a5fa;
+    }
+
+    .strength-meter {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-top: 0.35rem;
+    }
+
+    .strength-bar-bg {
+      flex: 1;
+      height: 4px;
+      background: #e2e8f0;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    :host-context([data-theme="dark"]) .strength-bar-bg { background: #334155; }
+
+    .strength-bar-fill {
+      height: 100%;
+      transition: width 0.2s ease, background-color 0.2s ease;
+    }
+
+    .strength-weak { background-color: #ef4444; }
+    .strength-medium { background-color: #f59e0b; }
+    .strength-strong { background-color: #10b981; }
+
+    .strength-text {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: #6b7280;
+    }
+
+    .field-error {
+      font-size: 0.75rem;
+      color: #dc2626;
+      margin-top: 0.2rem;
     }
 
     .checkbox-label { display: flex; align-items: center; gap: 0.5rem; font-size: 0.775rem; color: #4b5563; cursor: pointer; }
     :host-context([data-theme="dark"]) .checkbox-label { color: #94a3b8; }
     .checkbox-label a { color: #2563eb; text-decoration: none; }
 
-    .submit-btn { height: 46px; font-size: 0.95rem; font-weight: 600; margin-top: 0.5rem; width: 100%; }
+    .submit-btn {
+      height: 46px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin-top: 0.5rem;
+      width: 100%;
+      background: #2563eb;
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+    .submit-btn:hover:not(:disabled) { background: #1d4ed8; }
+    .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
     .signup-footer { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #f1f5f9; text-align: center; display: flex; flex-direction: column; gap: 0.5rem; }
     :host-context([data-theme="dark"]) .signup-footer { border-top-color: #334155; }
     .signin-prompt { font-size: 0.85rem; color: #6b7280; margin: 0; }
@@ -248,12 +393,19 @@ import { AuthService } from '../../../core/services/auth.service';
   `],
 })
 export class SignUpPageComponent {
-  public fullName = '';
+  public firstName = '';
+  public lastName = '';
   public email = '';
   public password = '';
-  public agreeTerms = true;
+  public confirmPassword = '';
+  public agreeTerms = false;
   public isLoading = signal<boolean>(false);
   public showPassword = signal<boolean>(false);
+  public errorMessage = signal<string | null>(null);
+
+  public strengthPercent = signal<number>(0);
+  public strengthClass = signal<string>('strength-weak');
+  public strengthLabel = signal<string>('');
 
   constructor(
     private router: Router,
@@ -266,18 +418,76 @@ export class SignUpPageComponent {
     this.showPassword.update((v) => !v);
   }
 
-  public async onSocialSignUp(provider: string): Promise<void> {
-    this.isLoading.set(true);
-    await this.authService.signup(this.fullName || 'New User', this.email || 'user@company.com', this.password);
-    this.isLoading.set(false);
-    this.router.navigate(['/dashboard']);
+  public onPasswordInput(): void {
+    const val = this.password;
+    if (!val) {
+      this.strengthPercent.set(0);
+      this.strengthLabel.set('');
+      return;
+    }
+
+    let score = 0;
+    if (val.length >= 8) score += 33;
+    if (/[A-Z]/.test(val) && /[0-9]/.test(val)) score += 33;
+    if (/[^A-Za-z0-9]/.test(val)) score += 34;
+
+    this.strengthPercent.set(score);
+
+    if (score <= 33) {
+      this.strengthClass.set('strength-weak');
+      this.strengthLabel.set('Weak');
+    } else if (score <= 66) {
+      this.strengthClass.set('strength-medium');
+      this.strengthLabel.set('Medium');
+    } else {
+      this.strengthClass.set('strength-strong');
+      this.strengthLabel.set('Strong');
+    }
   }
 
-  public async onSignUp(event: Event): Promise<void> {
+  public isFormValid(): boolean {
+    return (
+      !!this.firstName &&
+      !!this.lastName &&
+      !!this.email &&
+      this.email.includes('@') &&
+      this.password.length >= 8 &&
+      this.password === this.confirmPassword &&
+      this.agreeTerms
+    );
+  }
+
+  public onSocialSignUp(provider: string): void {
+    this.errorMessage.set(`${provider} OAuth Registration requires Enterprise Single Sign-On configuration.`);
+  }
+
+  public onSignUp(event: Event): void {
     event.preventDefault();
+    if (!this.isFormValid()) return;
+
     this.isLoading.set(true);
-    await this.authService.signup(this.fullName, this.email, this.password);
-    this.isLoading.set(false);
-    this.router.navigate(['/dashboard']);
+    this.errorMessage.set(null);
+
+    const fullName = `${this.firstName.trim()} ${this.lastName.trim()}`;
+
+    this.authService.signup(fullName, this.email, this.password).subscribe({
+      next: () => {
+        // Automatically login the newly registered user
+        this.authService.login(this.email, this.password).subscribe({
+          next: () => {
+            this.isLoading.set(false);
+            this.router.navigate(['/dashboard']);
+          },
+          error: () => {
+            this.isLoading.set(false);
+            this.router.navigate(['/login']);
+          },
+        });
+      },
+      error: (err) => {
+        this.isLoading.set(false);
+        this.errorMessage.set(err.message || 'Registration failed. User with this email may already exist.');
+      },
+    });
   }
 }

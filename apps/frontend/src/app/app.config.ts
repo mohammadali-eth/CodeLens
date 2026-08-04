@@ -6,6 +6,7 @@ import { provideServiceWorker } from '@angular/service-worker';
 
 import { routes } from './app.routes';
 import { httpPerformanceInterceptor } from './core/interceptors/http-performance.interceptor';
+import { authInterceptor } from './core/interceptors/auth.interceptor';
 import { GlobalErrorHandler } from './core/services/global-error-handler.service';
 
 export const appConfig: ApplicationConfig = {
@@ -19,7 +20,7 @@ export const appConfig: ApplicationConfig = {
     ),
     provideHttpClient(
       withFetch(),
-      withInterceptors([httpPerformanceInterceptor])
+      withInterceptors([authInterceptor, httpPerformanceInterceptor])
     ),
     provideAnimationsAsync(),
     provideServiceWorker('ngsw-worker.js', {

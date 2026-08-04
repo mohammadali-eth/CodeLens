@@ -1,19 +1,38 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, signal, inject } from '@angular/core';
 import { Router } from '@angular/router';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { Observable, catchError, map, of, tap, throwError, switchMap } from 'rxjs';
 
 export interface User {
   id: string;
   email: string;
-  name: string;
+  name: string | null;
   role: string;
-  organization: string;
+  status?: string;
+  organization?: string;
   avatarUrl?: string;
+  createdAt?: string;
+}
+
+export interface AuthResponse {
+  accessToken: string;
+  refreshToken: string;
+  user: User;
+}
+
+export interface RefreshResponse {
+  accessToken: string;
+  refreshToken: string;
 }
 
 @Injectable({
   providedIn: 'root',
 })
 export class AuthService {
+  private readonly http = inject(HttpClient);
+  private readonly router = inject(Router);
+
+  private readonly API_BASE_URL = 'http://localhost:4000';
   private readonly TOKEN_KEY = 'codelens_access_token';
   private readonly REFRESH_TOKEN_KEY = 'codelens_refresh_token';
   private readonly USER_KEY = 'codelens_user_session';
@@ -22,102 +41,141 @@ export class AuthService {
   public currentUser = signal<User | null>(null);
   public isAuthenticated = signal<boolean>(false);
   public isLoadingAuth = signal<boolean>(true);
+  public authError = signal<string | null>(null);
 
-  constructor(private router: Router) {
+  constructor() {
     this.initAuthCheck();
   }
 
   /**
    * Verified startup auth check:
-   * Examines localStorage for existing valid token and session.
-   * Prevents flashing dashboard, redirect loops, or blank screens.
+   * Examines localStorage for existing token, then verifies against /users/me endpoint.
    */
   public initAuthCheck(): void {
     this.isLoadingAuth.set(true);
+    const token = this.getToken();
 
-    try {
-      const token = localStorage.getItem(this.TOKEN_KEY);
-      const userRaw = localStorage.getItem(this.USER_KEY);
-
-      if (token && userRaw) {
-        const user: User = JSON.parse(userRaw);
-        this.currentUser.set(user);
-        this.isAuthenticated.set(true);
-      } else {
-        this.currentUser.set(null);
-        this.isAuthenticated.set(false);
-      }
-    } catch (error) {
-      console.error('Error restoring auth session:', error);
-      this.clearAuthStorage();
-      this.currentUser.set(null);
-      this.isAuthenticated.set(false);
-    } finally {
+    if (!token) {
+      this.clearAuthState();
       this.isLoadingAuth.set(false);
+      return;
     }
-  }
 
-  /**
-   * Authenticate user with credentials
-   */
-  public login(email: string, password?: string): Promise<boolean> {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const mockUser: User = {
-          id: 'usr_' + Math.random().toString(36).substring(2, 9),
-          email: email || 'm.ali@codelens.io',
-          name: email ? email.split('@')[0].replace('.', ' ') : 'Mohammad Ali',
-          role: 'Principal SRE & Architect',
-          organization: 'CodeLens Inc.',
-        };
-        const mockToken = 'jwt_token_' + Date.now();
-        const mockRefreshToken = 'refresh_token_' + Date.now();
-
-        localStorage.setItem(this.TOKEN_KEY, mockToken);
-        localStorage.setItem(this.REFRESH_TOKEN_KEY, mockRefreshToken);
-        localStorage.setItem(this.USER_KEY, JSON.stringify(mockUser));
-
-        this.currentUser.set(mockUser);
+    // Validate token and fetch fresh user profile from backend
+    this.http.get<User>(`${this.API_BASE_URL}/users/me`).pipe(
+      tap((user) => {
+        this.setSessionUser(user);
         this.isAuthenticated.set(true);
-        resolve(true);
-      }, 500);
-    });
+        this.isLoadingAuth.set(false);
+      }),
+      catchError((err: HttpErrorResponse) => {
+        // If token is expired, try refreshing
+        const refreshToken = this.getRefreshToken();
+        if (refreshToken) {
+          return this.refreshToken().pipe(
+            switchMap(() => this.http.get<User>(`${this.API_BASE_URL}/users/me`)),
+            tap((user) => {
+              this.setSessionUser(user);
+              this.isAuthenticated.set(true);
+              this.isLoadingAuth.set(false);
+            }),
+            catchError(() => {
+              this.clearAuthStorage();
+              this.clearAuthState();
+              this.isLoadingAuth.set(false);
+              return of(null);
+            })
+          );
+        } else {
+          this.clearAuthStorage();
+          this.clearAuthState();
+          this.isLoadingAuth.set(false);
+          return of(null);
+        }
+      })
+    ).subscribe();
   }
 
   /**
-   * Register new user account
+   * Authenticate user with backend API credentials
    */
-  public signup(name: string, email: string, password?: string): Promise<boolean> {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const mockUser: User = {
-          id: 'usr_' + Math.random().toString(36).substring(2, 9),
-          email: email,
-          name: name || email.split('@')[0],
-          role: 'Engineering Lead',
-          organization: 'Enterprise SaaS',
-        };
-        const mockToken = 'jwt_token_' + Date.now();
-        const mockRefreshToken = 'refresh_token_' + Date.now();
-
-        localStorage.setItem(this.TOKEN_KEY, mockToken);
-        localStorage.setItem(this.REFRESH_TOKEN_KEY, mockRefreshToken);
-        localStorage.setItem(this.USER_KEY, JSON.stringify(mockUser));
-
-        this.currentUser.set(mockUser);
+  public login(email: string, password?: string): Observable<AuthResponse> {
+    this.authError.set(null);
+    return this.http.post<AuthResponse>(`${this.API_BASE_URL}/auth/login`, {
+      email,
+      password,
+    }).pipe(
+      tap((res) => {
+        this.saveTokens(res.accessToken, res.refreshToken);
+        this.setSessionUser(res.user);
         this.isAuthenticated.set(true);
-        resolve(true);
-      }, 500);
-    });
+      }),
+      catchError((error: HttpErrorResponse) => {
+        const message = error.error?.message || 'Invalid email or password credentials.';
+        this.authError.set(message);
+        return throwError(() => new Error(message));
+      })
+    );
   }
 
   /**
-   * Logout user, clear storage, reset state, and navigate to home page
+   * Register new user account with backend API
+   */
+  public signup(name: string, email: string, password?: string): Observable<User> {
+    this.authError.set(null);
+    return this.http.post<User>(`${this.API_BASE_URL}/auth/register`, {
+      name,
+      email,
+      password,
+    }).pipe(
+      tap((user) => {
+        // Optionally auto-login after signup
+      }),
+      catchError((error: HttpErrorResponse) => {
+        const message = error.error?.message || 'Failed to register account.';
+        this.authError.set(message);
+        return throwError(() => new Error(message));
+      })
+    );
+  }
+
+  /**
+   * Refresh expired Access Token using Refresh Token
+   */
+  public refreshToken(): Observable<RefreshResponse> {
+    const refreshToken = this.getRefreshToken();
+    if (!refreshToken) {
+      return throwError(() => new Error('No refresh token available'));
+    }
+
+    return this.http.post<RefreshResponse>(`${this.API_BASE_URL}/auth/refresh`, {
+      refreshToken,
+    }).pipe(
+      tap((res) => {
+        this.saveTokens(res.accessToken, res.refreshToken);
+      }),
+      catchError((err) => {
+        this.clearAuthStorage();
+        this.clearAuthState();
+        return throwError(() => err);
+      })
+    );
+  }
+
+  /**
+   * Logout user, notify backend, clear storage, and redirect
    */
   public logout(): void {
+    const refreshToken = this.getRefreshToken();
+
+    if (refreshToken && this.getToken()) {
+      this.http.post(`${this.API_BASE_URL}/auth/logout`, { refreshToken }).pipe(
+        catchError(() => of(null))
+      ).subscribe();
+    }
+
     this.clearAuthStorage();
-    this.currentUser.set(null);
-    this.isAuthenticated.set(false);
+    this.clearAuthState();
     this.router.navigate(['/']);
   }
 
@@ -132,9 +190,29 @@ export class AuthService {
     return localStorage.getItem(this.TOKEN_KEY);
   }
 
+  public getRefreshToken(): string | null {
+    return localStorage.getItem(this.REFRESH_TOKEN_KEY);
+  }
+
+  private saveTokens(accessToken: string, refreshToken: string): void {
+    localStorage.setItem(this.TOKEN_KEY, accessToken);
+    localStorage.setItem(this.REFRESH_TOKEN_KEY, refreshToken);
+  }
+
+  private setSessionUser(user: User): void {
+    localStorage.setItem(this.USER_KEY, JSON.stringify(user));
+    this.currentUser.set(user);
+  }
+
   private clearAuthStorage(): void {
     localStorage.removeItem(this.TOKEN_KEY);
     localStorage.removeItem(this.REFRESH_TOKEN_KEY);
     localStorage.removeItem(this.USER_KEY);
+  }
+
+  private clearAuthState(): void {
+    this.currentUser.set(null);
+    this.isAuthenticated.set(false);
+    this.authError.set(null);
   }
 }

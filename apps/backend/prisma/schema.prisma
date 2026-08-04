@@ -17,7 +17,6 @@ enum Role {
   USER
 }
 
-
 enum UserStatus {
   ACTIVE
   INACTIVE
@@ -83,7 +82,6 @@ enum ReportStatus {
   FAILED
 }
 
-
 model User {
   id              String           @id @default(uuid())
   email           String           @unique
@@ -104,8 +102,6 @@ model User {
   reports         Report[]
   sharedReports   SharedReport[]
   updatedSettings SystemSetting[]
-
-
 
   @@index([email])
   @@index([status])
@@ -160,7 +156,6 @@ model AuditLog {
   @@map("audit_logs")
 }
 
-
 model Review {
   id               String           @id @default(uuid())
   title            String
@@ -168,7 +163,7 @@ model Review {
   repository       String?
   branch           String?
   status           ReviewStatus     @default(PENDING)
-  score            Int?             // 0-100 Quality Score
+  score            Int? // 0-100 Quality Score
   summary          String?          @db.Text
   explanation      String?          @db.Text // AI structural code explanation
   timeComplexity   String?
@@ -204,18 +199,18 @@ model Review {
 }
 
 model ReviewFile {
-  id            String              @id @default(uuid())
-  reviewId      String
-  review        Review              @relation(fields: [reviewId], references: [id], onDelete: Cascade)
-  filename      String
-  content       String              @db.Text
-  language      ProgrammingLanguage
-  fileSize      Int                 @default(0)
-  storagePath   String?
-  improvedCode  String?             @db.Text
-  issues        Issue[]
-  createdAt     DateTime            @default(now())
-  updatedAt     DateTime            @updatedAt
+  id           String              @id @default(uuid())
+  reviewId     String
+  review       Review              @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  filename     String
+  content      String              @db.Text
+  language     ProgrammingLanguage
+  fileSize     Int                 @default(0)
+  storagePath  String?
+  improvedCode String?             @db.Text
+  issues       Issue[]
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
 
   @@index([reviewId])
   @@index([language])
@@ -228,7 +223,7 @@ model Issue {
   file            ReviewFile @relation(fields: [fileId], references: [id], onDelete: Cascade)
   line            Int
   severity        Severity
-  category        String     // e.g. SECURITY, COMPLEXITY, STYLE, BUG, PERFORMANCE
+  category        String // e.g. SECURITY, COMPLEXITY, STYLE, BUG, PERFORMANCE
   message         String     @db.Text
   suggestion      String?    @db.Text
   confidenceScore Float?     @default(1.0)
@@ -316,7 +311,7 @@ model Activity {
   id        String   @id @default(uuid())
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  action    String   // e.g. REGISTER, LOGIN, CREATE_REVIEW, FAVORITE_REVIEW, CHAT_MESSAGE
+  action    String // e.g. REGISTER, LOGIN, CREATE_REVIEW, FAVORITE_REVIEW, CHAT_MESSAGE
   details   String?  @db.Text
   createdAt DateTime @default(now())
 
@@ -427,5 +422,3 @@ model SystemSetting {
   @@index([isPublic])
   @@map("system_settings")
 }
-
-
