@@ -66,14 +66,17 @@ function handle401Error(
         authService.handleUnauthorized();
         return throwError(() => new Error('Session expired'));
       }),
-      catchError((refreshError) => {
+      catchError((refreshError: HttpErrorResponse) => {
         isRefreshing = false;
-        authService.handleUnauthorized();
+        // Only redirect to login on explicit 401/403 credential rejection
+        if (refreshError.status === 401 || refreshError.status === 403) {
+          authService.handleUnauthorized();
+        }
         return throwError(() => refreshError);
       })
     );
   } else {
-    // Wait until refreshTokenSubject releases new access token
+    // Queue concurrent 401 requests until single-flight refresh completes
     return refreshTokenSubject.pipe(
       filter((token) => token !== null),
       take(1),

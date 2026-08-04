@@ -28,8 +28,9 @@ export interface RefreshResponse {
 /**
  * AuthService
  * Purpose: Enterprise authentication state manager & identity session controller.
- * Responsibilities: Instant synchronous session hydration from cache, background token verification via GET /users/me,
- * token refresh orchestration, and secure session destruction on explicit logout.
+ * Responsibilities: Instant synchronous session hydration from cache, resilient background token verification via GET /users/me,
+ * single-flight token refresh orchestration, and explicit session termination.
+ * Dependencies: HttpClient, Router.
  */
 @Injectable({
   providedIn: 'root',
@@ -63,23 +64,23 @@ export class AuthService {
     const token = this.getToken();
     const cachedUserJson = localStorage.getItem(this.USER_KEY);
 
-    if (token && cachedUserJson) {
-      try {
-        const cachedUser: User = JSON.parse(cachedUserJson);
-        this.currentUser.set(cachedUser);
-        this.isAuthenticated.set(true);
-      } catch (err) {
-        // Invalid JSON cache
-        this.clearAuthStorage();
-        this.clearAuthState();
+    if (token) {
+      if (cachedUserJson) {
+        try {
+          const cachedUser: User = JSON.parse(cachedUserJson);
+          this.currentUser.set(cachedUser);
+        } catch (err) {
+          // Non-critical JSON parse error
+        }
       }
+      this.isAuthenticated.set(true);
     }
   }
 
   /**
    * Verified Startup Session Verification:
    * Validates access token and fetches fresh user profile from GET /users/me.
-   * If token is expired, authInterceptor handles refresh automatically.
+   * Only clears session if backend explicitly responds with 401 Unauthorized or 403 Forbidden.
    */
   public initAuthCheck(): void {
     const token = this.getToken();
@@ -100,9 +101,15 @@ export class AuthService {
         this.isLoadingAuth.set(false);
       }),
       catchError((err: HttpErrorResponse) => {
-        // If GET /users/me fails even after authInterceptor token refresh attempts
-        this.clearAuthStorage();
-        this.clearAuthState();
+        // ONLY clear session if backend explicitly responds with 401 or 403 (Invalid/Expired token)
+        // DO NOT log out user on status 0 (offline/network delay) or status >= 500 (server issues)
+        if (err.status === 401 || err.status === 403) {
+          this.clearAuthStorage();
+          this.clearAuthState();
+        } else {
+          // Preserve authenticated state from local storage
+          this.isAuthenticated.set(true);
+        }
         this.isLoadingAuth.set(false);
         return of(null);
       })
@@ -165,8 +172,10 @@ export class AuthService {
         this.saveTokens(res.accessToken, res.refreshToken);
       }),
       catchError((err: HttpErrorResponse) => {
-        this.clearAuthStorage();
-        this.clearAuthState();
+        if (err.status === 401 || err.status === 403) {
+          this.clearAuthStorage();
+          this.clearAuthState();
+        }
         return throwError(() => err);
       })
     );
@@ -191,7 +200,7 @@ export class AuthService {
   }
 
   /**
-   * Handle expired sessions or 401 Unauthorized API responses
+   * Handle unauthorized 401/403 responses
    */
   public handleUnauthorized(): void {
     this.clearAuthStorage();
