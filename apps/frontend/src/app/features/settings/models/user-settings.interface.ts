@@ -6,7 +6,9 @@
  */
 
 export type ThemeMode = 'light' | 'dark' | 'system';
-export type FontSizeOption = 'small' | 'medium' | 'large';
+export type FontSizeOption = 'small' | 'medium' | 'large' | 'xl';
+export type DensityOption = 'comfortable' | 'compact' | 'spacious';
+export type SidebarModeOption = 'expanded' | 'collapsed' | 'auto';
 export type WordWrapOption = 'off' | 'on' | 'wordWrapColumn';
 export type LineNumbersOption = 'on' | 'off' | 'relative';
 export type AutoSaveOption = 'off' | 'afterDelay' | 'onFocusChange';
@@ -20,6 +22,10 @@ export interface AppearancePreferences {
   editorFont: string;
   editorTheme: string;
   compactMode: boolean;
+  density?: DensityOption;
+  sidebarMode?: SidebarModeOption;
+  animations?: boolean;
+  reducedMotion?: boolean;
 }
 
 export interface EditorPreferences {
@@ -73,11 +79,15 @@ export interface UserSettings {
 
 export const DEFAULT_USER_SETTINGS: UserSettings = {
   appearance: {
-    theme: 'light',
+    theme: 'dark',
     fontSize: 'medium',
-    editorFont: "'Fira Code', 'JetBrains Mono', Consolas, monospace",
-    editorTheme: 'vs-light',
+    editorFont: "'Fira Code', monospace",
+    editorTheme: 'vs-dark',
     compactMode: false,
+    density: 'comfortable',
+    sidebarMode: 'expanded',
+    animations: true,
+    reducedMotion: false,
   },
   editor: {
     wordWrap: 'on',

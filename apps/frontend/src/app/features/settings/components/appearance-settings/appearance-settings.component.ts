@@ -6,12 +6,12 @@ import { ThemeManagerService } from '../../services/theme-manager.service';
 import { SettingsSectionComponent } from '../settings-section/settings-section.component';
 import { PreferenceCardComponent } from '../preference-card/preference-card.component';
 import { ThemeSelectorComponent } from './theme-selector.component';
-import { ThemeMode, AppearancePreferences } from '../../models/user-settings.interface';
+import { ThemeMode, AppearancePreferences, DEFAULT_USER_SETTINGS } from '../../models/user-settings.interface';
 
 /**
  * AppearanceSettingsComponent
- * Purpose: Allows users to configure visual themes, font sizes, editor themes, and compact layout mode.
- * Responsibilities: Form state binding, real-time ThemeManagerService updates, and backend settings persistence.
+ * Purpose: Enterprise visual settings control panel for themes, typography scaling, editor fonts, syntax highlighters, and compact layout.
+ * Responsibilities: Real-time UI live previewing, reactive form state binding, and database preference synchronization.
  * Dependencies: SettingsService, ThemeManagerService, ThemeSelectorComponent, PreferenceCardComponent.
  */
 @Component({
@@ -28,7 +28,7 @@ import { ThemeMode, AppearancePreferences } from '../../models/user-settings.int
   template: `
     <app-settings-section
       title="Appearance & Visual Customization"
-      description="Choose your interface theme, editor font family, text scaling, and compact layout."
+      description="Customize your interface theme, typography scaling, code editor font family, syntax highlighter, and compact layout density."
       icon="palette"
       [isSaveable]="true"
       [saving]="service.saving()"
@@ -37,7 +37,7 @@ import { ThemeMode, AppearancePreferences } from '../../models/user-settings.int
     >
       <!-- Theme Selection Grid -->
       <div class="theme-selection-block">
-        <label class="block-label">APPLICATION THEME</label>
+        <label class="block-label">APPLICATION THEME MODE</label>
         <app-theme-selector
           [selectedTheme]="form.get('theme')?.value"
           (themeSelect)="onThemeChange($event)"
@@ -45,52 +45,56 @@ import { ThemeMode, AppearancePreferences } from '../../models/user-settings.int
       </div>
 
       <form [formGroup]="form" class="settings-form">
-        <!-- Font Size -->
+        <!-- Font Scale -->
         <app-preference-card
           label="Interface Font Scale"
-          description="Adjust global font size across navigation menus, sidebar elements, and cards."
+          description="Adjust global font size across navigation menus, sidebars, forms, tables, and card panels."
           icon="type"
         >
           <select class="form-select" formControlName="fontSize" (change)="onLivePreview()">
             <option value="small">Small (13px)</option>
             <option value="medium">Medium (14px Default)</option>
             <option value="large">Large (16px)</option>
+            <option value="xl">Extra Large (18px)</option>
           </select>
         </app-preference-card>
 
         <!-- Editor Font Family -->
         <app-preference-card
           label="Code Editor Font"
-          description="Font family used for rendering diff viewers and code snippets."
+          description="Monospaced typography applied to diff viewers, code blocks, and analysis viewports."
           icon="code"
         >
-          <select class="form-select" formControlName="editorFont">
+          <select class="form-select" formControlName="editorFont" (change)="onLivePreview()">
             <option value="'Fira Code', monospace">Fira Code (With Ligatures)</option>
             <option value="'JetBrains Mono', monospace">JetBrains Mono</option>
-            <option value="Consolas, monospace">Consolas</option>
             <option value="'Source Code Pro', monospace">Source Code Pro</option>
+            <option value="'Cascadia Code', monospace">Cascadia Code</option>
+            <option value="Monaco, monospace">Monaco</option>
+            <option value="Menlo, monospace">Menlo</option>
           </select>
         </app-preference-card>
 
-        <!-- Editor Color Theme -->
+        <!-- Editor Syntax Color Theme -->
         <app-preference-card
           label="Code Syntax Theme"
           description="Color scheme applied to syntax highlighting within code review viewports."
           icon="palette"
         >
-          <select class="form-select" formControlName="editorTheme">
+          <select class="form-select" formControlName="editorTheme" (change)="onLivePreview()">
             <option value="vs-dark">VS Code Dark Plus</option>
             <option value="one-dark">One Dark Pro</option>
             <option value="github-dark">GitHub Dark Default</option>
             <option value="github-light">GitHub Light</option>
             <option value="monokai">Monokai Pro</option>
+            <option value="solarized-light">Solarized Light</option>
           </select>
         </app-preference-card>
 
-        <!-- Compact Mode -->
+        <!-- Compact Mode Toggle -->
         <app-preference-card
           label="Compact Layout Mode"
-          description="Reduces vertical margins and table paddings to fit more content on screen."
+          description="Reduces vertical paddings, margins, and table row heights to maximize visible content density."
           icon="type"
         >
           <label class="switch-toggle">
@@ -103,7 +107,7 @@ import { ThemeMode, AppearancePreferences } from '../../models/user-settings.int
   `,
   styles: [`
     .theme-selection-block {
-      margin-bottom: 20px;
+      margin-bottom: 24px;
     }
 
     .block-label {
@@ -118,11 +122,11 @@ import { ThemeMode, AppearancePreferences } from '../../models/user-settings.int
     .settings-form {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 12px;
     }
 
     .form-select {
-      width: 260px;
+      width: 280px;
       background: var(--bg-surface, #ffffff);
       border: 1px solid var(--border-color, #e5e7eb);
       border-radius: var(--radius-md, 8px);
@@ -199,10 +203,10 @@ export class AppearanceSettingsComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
 
   readonly form: FormGroup = this.fb.group({
-    theme: ['light'],
+    theme: ['dark'],
     fontSize: ['medium'],
     editorFont: ["'Fira Code', monospace"],
-    editorTheme: ['vs-light'],
+    editorTheme: ['vs-dark'],
     compactMode: [false],
   });
 
@@ -211,6 +215,7 @@ export class AppearanceSettingsComponent implements OnInit {
       const s = this.service.settings();
       if (s && s.appearance) {
         this.form.patchValue(s.appearance, { emitEvent: false });
+        this.themeManager.applyPreferences(s.appearance);
       }
     });
   }
@@ -219,12 +224,14 @@ export class AppearanceSettingsComponent implements OnInit {
     const s = this.service.settings();
     if (s && s.appearance) {
       this.form.patchValue(s.appearance);
+      this.themeManager.applyPreferences(s.appearance);
     }
   }
 
   onThemeChange(theme: ThemeMode): void {
     this.form.patchValue({ theme });
     this.themeManager.setTheme(theme);
+    this.onLivePreview();
   }
 
   onLivePreview(): void {
@@ -233,16 +240,21 @@ export class AppearanceSettingsComponent implements OnInit {
   }
 
   onSubmit(): void {
+    const pref: AppearancePreferences = this.form.value;
+    this.themeManager.applyPreferences(pref);
     this.service.updateSettings({
-      appearance: this.form.value,
+      appearance: pref,
     }).subscribe();
   }
 
   onReset(): void {
-    const s = this.service.settings();
-    if (s && s.appearance) {
-      this.form.reset(s.appearance);
-      this.themeManager.applyPreferences(s.appearance);
+    if (confirm('Are you sure you want to reset all appearance preferences to factory default?')) {
+      const defaults = DEFAULT_USER_SETTINGS.appearance;
+      this.form.reset(defaults);
+      this.themeManager.applyPreferences(defaults);
+      this.service.updateSettings({
+        appearance: defaults,
+      }).subscribe();
     }
   }
 }
