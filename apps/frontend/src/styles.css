@@ -154,9 +154,53 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Code Highlighting Font Enforcement */
-code, pre, .code-editor, .diff-viewer, [data-editor-font] {
+/* Code Highlighting & Viewport Options Enforcement */
+code, pre, .code-editor, .diff-viewer, .code-editor-viewport, .preview-code-block, [data-editor-font] {
   font-family: var(--editor-font-family, 'Fira Code', monospace) !important;
+  font-size: var(--editor-font-size, 14px) !important;
+  tab-size: var(--editor-tab-size, 2) !important;
+  -moz-tab-size: var(--editor-tab-size, 2) !important;
+}
+
+/* Dynamic Word Wrap Rules */
+[data-editor-word-wrap="on"] code,
+[data-editor-word-wrap="on"] pre,
+[data-editor-word-wrap="on"] .code-preview,
+[data-editor-word-wrap="on"] .code-editor-viewport,
+[data-editor-word-wrap="on"] .code-diff-box {
+  white-space: pre-wrap !important;
+  word-break: break-all !important;
+}
+
+[data-editor-word-wrap="off"] code,
+[data-editor-word-wrap="off"] pre,
+[data-editor-word-wrap="off"] .code-preview,
+[data-editor-word-wrap="off"] .code-editor-viewport,
+[data-editor-word-wrap="off"] .code-diff-box {
+  white-space: pre !important;
+  word-break: normal !important;
+}
+
+[data-editor-word-wrap="wordWrapColumn"] code,
+[data-editor-word-wrap="wordWrapColumn"] pre,
+[data-editor-word-wrap="wordWrapColumn"] .code-preview,
+[data-editor-word-wrap="bounded"] code,
+[data-editor-word-wrap="bounded"] pre,
+[data-editor-word-wrap="bounded"] .code-preview {
+  white-space: pre-wrap !important;
+  max-width: 80ch !important;
+}
+
+/* Dynamic Line Numbers Visibility */
+[data-editor-line-numbers="off"] .line-numbers,
+[data-editor-line-numbers="off"] .line-num {
+  display: none !important;
+}
+
+/* Dynamic Minimap Visibility */
+[data-editor-minimap="false"] .editor-minimap-gutter,
+[data-editor-minimap="false"] .preview-minimap {
+  display: none !important;
 }
 
 /* Scrollbar Styling */

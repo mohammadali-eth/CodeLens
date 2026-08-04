@@ -7,13 +7,14 @@ import { UserSession, RevokeSessionResponse } from '../models/session.interface'
 import { ApiKey, CreateApiKeyDto, CreateApiKeyResponse } from '../models/api-key.interface';
 import { ChangePasswordRequest, LoginHistoryEntry, TwoFactorState } from '../models/security.interface';
 import { ThemeManagerService } from './theme-manager.service';
+import { EditorManagerService } from './editor-manager.service';
 import { AuthService } from '../../../core/services/auth.service';
 
 /**
  * SettingsService
  * Purpose: Centralized reactive Signals state management & REST HTTP client for user settings, profile, sessions, and security.
  * Responsibilities: Real backend API communication with zero static fallback data.
- * Dependencies: HttpClient, ThemeManagerService, AuthService.
+ * Dependencies: HttpClient, ThemeManagerService, EditorManagerService, AuthService.
  */
 @Injectable({
   providedIn: 'root',
@@ -21,6 +22,7 @@ import { AuthService } from '../../../core/services/auth.service';
 export class SettingsService {
   private readonly http = inject(HttpClient);
   private readonly themeManager = inject(ThemeManagerService);
+  private readonly editorManager = inject(EditorManagerService);
   private readonly authService = inject(AuthService);
 
   private readonly API_BASE_URL = 'http://localhost:4000';
@@ -136,10 +138,16 @@ export class SettingsService {
         if (merged.appearance) {
           this.themeManager.applyPreferences(merged.appearance);
         }
+        if (merged.editor) {
+          this.editorManager.applyPreferences(merged.editor);
+        }
       }),
       catchError(() => {
         const current = this.settings();
         this.themeManager.applyPreferences(current.appearance);
+        if (current.editor) {
+          this.editorManager.applyPreferences(current.editor);
+        }
         return of(current);
       }),
       finalize(() => this.loading.set(false))
@@ -167,6 +175,9 @@ export class SettingsService {
         this.settings.set(res);
         if (res.appearance) {
           this.themeManager.applyPreferences(res.appearance);
+        }
+        if (res.editor) {
+          this.editorManager.applyPreferences(res.editor);
         }
         this.showSuccess('Preferences saved successfully');
       }),

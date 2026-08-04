@@ -9,9 +9,11 @@ export type ThemeMode = 'light' | 'dark' | 'system';
 export type FontSizeOption = 'small' | 'medium' | 'large' | 'xl';
 export type DensityOption = 'comfortable' | 'compact' | 'spacious';
 export type SidebarModeOption = 'expanded' | 'collapsed' | 'auto';
-export type WordWrapOption = 'off' | 'on' | 'wordWrapColumn';
-export type LineNumbersOption = 'on' | 'off' | 'relative';
-export type AutoSaveOption = 'off' | 'afterDelay' | 'onFocusChange';
+export type WordWrapOption = 'off' | 'on' | 'wordWrapColumn' | 'bounded';
+export type LineNumbersOption = 'on' | 'off' | 'relative' | 'interval';
+export type AutoSaveOption = 'off' | 'afterDelay' | 'onFocusChange' | 'onWindowChange';
+export type CursorStyleOption = 'line' | 'block' | 'underline' | 'line-thin';
+export type ShowWhitespaceOption = 'none' | 'boundary' | 'selection' | 'all';
 export type DetailLevelOption = 'concise' | 'balanced' | 'exhaustive';
 export type ExplanationStyleOption = 'architectural' | 'security-first' | 'code-only' | 'step-by-step';
 export type ProfileVisibilityOption = 'public' | 'organization' | 'private';
@@ -37,6 +39,11 @@ export interface EditorPreferences {
   fontFamily: string;
   fontSize: number;
   defaultLanguage: string;
+  cursorStyle?: CursorStyleOption;
+  showWhitespace?: ShowWhitespaceOption;
+  renderIndentGuides?: boolean;
+  codeLens?: boolean;
+  bracketPairColorization?: boolean;
 }
 
 export interface AIPreferences {
@@ -98,6 +105,11 @@ export const DEFAULT_USER_SETTINGS: UserSettings = {
     fontFamily: "'Fira Code', monospace",
     fontSize: 14,
     defaultLanguage: 'typescript',
+    cursorStyle: 'line',
+    showWhitespace: 'selection',
+    renderIndentGuides: true,
+    codeLens: true,
+    bracketPairColorization: true,
   },
   ai: {
     defaultAIProvider: 'gemini',
