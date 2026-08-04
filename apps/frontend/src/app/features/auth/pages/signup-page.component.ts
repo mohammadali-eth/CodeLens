@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, signal, computed } from '@angular/core';
+import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -469,19 +469,25 @@ export class SignUpPageComponent {
     this.errorMessage.set(null);
 
     const fullName = `${this.firstName.trim()} ${this.lastName.trim()}`;
+    const registeredEmail = this.email;
 
-    this.authService.signup(fullName, this.email, this.password).subscribe({
+    this.authService.signup(fullName, registeredEmail, this.password).subscribe({
       next: () => {
-        // Automatically login the newly registered user
-        this.authService.login(this.email, this.password).subscribe({
-          next: () => {
-            this.isLoading.set(false);
-            this.router.navigate(['/dashboard']);
-          },
-          error: () => {
-            this.isLoading.set(false);
-            this.router.navigate(['/login']);
-          },
+        this.isLoading.set(false);
+
+        // Clear signup form
+        this.firstName = '';
+        this.lastName = '';
+        this.email = '';
+        this.password = '';
+        this.confirmPassword = '';
+        this.agreeTerms = false;
+        this.strengthPercent.set(0);
+        this.strengthLabel.set('');
+
+        // Redirect to Login Page with success toast flag & pre-filled email
+        this.router.navigate(['/login'], {
+          queryParams: { registered: 'true', email: registeredEmail },
         });
       },
       error: (err) => {

@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -27,6 +27,16 @@ import { AuthService } from '../../../core/services/auth.service';
           <p class="auth-subtitle">Sign in to your Enterprise AI Code Review Workspace</p>
         </div>
 
+        <!-- Success Toast / Banner -->
+        <div *ngIf="successMessage()" class="success-banner animate-fade-in" role="status">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+          </svg>
+          <span>{{ successMessage() }}</span>
+        </div>
+
+        <!-- Error Banner -->
         <div *ngIf="errorMessage()" class="error-banner animate-fade-in" role="alert">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="10"/>
@@ -227,6 +237,25 @@ import { AuthService } from '../../../core/services/auth.service';
     .auth-subtitle { font-size: 0.875rem; color: #6b7280; margin: 0; }
     :host-context([data-theme="dark"]) .auth-subtitle { color: #94a3b8; }
 
+    .success-banner {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      background: #ecfdf5;
+      border: 1px solid #a7f3d0;
+      color: #047857;
+      font-size: 0.825rem;
+      font-weight: 500;
+      padding: 0.75rem 1rem;
+      border-radius: 10px;
+      margin-bottom: 1.25rem;
+    }
+    :host-context([data-theme="dark"]) .success-banner {
+      background: rgba(16, 185, 129, 0.15);
+      border-color: rgba(16, 185, 129, 0.3);
+      color: #6ee7b7;
+    }
+
     .error-banner {
       display: flex;
       align-items: center;
@@ -378,19 +407,30 @@ import { AuthService } from '../../../core/services/auth.service';
     .home-back-link a:hover { color: #2563eb; text-decoration: underline; }
   `],
 })
-export class LoginPageComponent {
+export class LoginPageComponent implements OnInit {
   public email = '';
   public password = '';
   public rememberMe = true;
   public isLoading = signal<boolean>(false);
   public showPassword = signal<boolean>(false);
   public errorMessage = signal<string | null>(null);
+  public successMessage = signal<string | null>(null);
 
   constructor(
     private router: Router,
     private route: ActivatedRoute,
     private authService: AuthService
   ) {}
+
+  public ngOnInit(): void {
+    const params = this.route.snapshot.queryParams;
+    if (params['registered'] === 'true') {
+      this.successMessage.set('Account created successfully. Please log in.');
+    }
+    if (params['email']) {
+      this.email = params['email'];
+    }
+  }
 
   public togglePasswordVisibility(event: MouseEvent): void {
     event.preventDefault();
@@ -408,6 +448,7 @@ export class LoginPageComponent {
 
     this.isLoading.set(true);
     this.errorMessage.set(null);
+    this.successMessage.set(null);
 
     this.authService.login(this.email, this.password).subscribe({
       next: () => {
