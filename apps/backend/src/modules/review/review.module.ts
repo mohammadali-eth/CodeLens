@@ -5,6 +5,8 @@ import { AIModule } from '../ai/ai.module';
 import { ReviewController } from './infrastructure/controllers/review.controller';
 import { AdminReviewsController } from './infrastructure/controllers/admin-reviews.controller';
 import { ProjectsController } from './infrastructure/controllers/projects.controller';
+import { WorkspacesController } from './infrastructure/controllers/workspaces.controller';
+import { ReportsExportController } from './infrastructure/controllers/reports-export.controller';
 import { CreateReviewUseCase } from './application/use-cases/create-review.use-case';
 import { GetReviewUseCase } from './application/use-cases/get-review.use-case';
 import { ListReviewsUseCase } from './application/use-cases/list-reviews.use-case';

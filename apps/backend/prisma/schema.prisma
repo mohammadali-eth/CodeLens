@@ -114,6 +114,7 @@ model User {
   reports         Report[]
   sharedReports   SharedReport[]
   updatedSettings SystemSetting[]
+  workspaces      Workspace[]
 
   @@index([email])
   @@index([username])
@@ -239,6 +240,7 @@ model Review {
   reAnalyses       Review[]         @relation("ReviewReAnalysis")
   chatSessions     ChatSession[]
   workspaceId      String?
+  workspace        Workspace?       @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
   files            ReviewFile[]
   favorites        FavoriteReview[]
   reports          Report[]
@@ -477,3 +479,37 @@ model SystemSetting {
   @@index([isPublic])
   @@map("system_settings")
 }
+
+model Workspace {
+  id          String          @id @default(uuid())
+  name        String
+  description String?         @db.Text
+  repository  String?
+  branch      String?         @default("main")
+  userId      String
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  files       WorkspaceFile[]
+  reviews     Review[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([userId])
+  @@map("workspaces")
+}
+
+model WorkspaceFile {
+  id          String              @id @default(uuid())
+  workspaceId String
+  workspace   Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  filename    String
+  path        String
+  content     String              @db.Text
+  language    ProgrammingLanguage @default(TYPESCRIPT)
+  fileSize    Int                 @default(0)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@index([workspaceId])
+  @@map("workspace_files")
+}
+

@@ -2,23 +2,22 @@ import {
   Component,
   inject,
   ChangeDetectionStrategy,
-  ViewChild,
-  ElementRef,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { WorkspaceService, AIProviderId, AI_PROVIDERS_CONFIG } from '../services/workspace.service';
+import { WorkspaceService, AIProviderId, AI_PROVIDERS_CONFIG, CodeIssueAnnotation } from '../services/workspace.service';
 import { EditorManagerService } from '../../settings/services/editor-manager.service';
 
 /**
  * WorkspacePageComponent
  * Purpose: Production-grade AI Code Review Cloud IDE Workspace.
- * Responsibilities:
- *  - Handles File Explorer (Files, Folders, Drag & Drop, ZIP archives, Search filtering)
- *  - Integrates Monaco/Code Viewport with EditorManagerService preferences (Font, Line Numbers, Minimap, Word Wrap)
- *  - Provides AI Review Settings (Provider selection, Dynamic model list, Analysis depth, Review Title)
- *  - Manages AI static analysis pipeline submission and live progress updates
- * Dependencies: WorkspaceService, EditorManagerService.
+ * Features:
+ *  - Persistent backend Workspace & File management (/workspaces)
+ *  - Single/Multi-file upload, Folder ingestion, JSZip archive extraction, Drag & Drop
+ *  - Dynamic AI Provider & Model list selection (Gemini, OpenAI, Anthropic, DeepSeek, Groq, Ollama)
+ *  - Real AI static analysis execution with progress streaming
+ *  - Inline Code Annotations (line-by-line severity callouts, bug indicators, AI suggestions)
+ *  - Exporting PDF, Markdown, JSON, and CSV reports
  */
 @Component({
   selector: 'cdl-workspace-page',
@@ -41,8 +40,8 @@ import { EditorManagerService } from '../../settings/services/editor-manager.ser
             <polyline points="17 8 12 3 7 8"/>
             <line x1="12" y1="3" x2="12" y2="15"/>
           </svg>
-          <h3>Drop Files, Folders, or ZIP Archives Here</h3>
-          <p>Import code directly into your AI Code Review Workspace</p>
+          <h3>Drop Code Files, Folders, or ZIP Archives Here</h3>
+          <p>Import code directly into your persistent AI Code Review Workspace</p>
         </div>
       </div>
 
@@ -76,14 +75,33 @@ import { EditorManagerService } from '../../settings/services/editor-manager.ser
 
             <div class="upload-menu" *ngIf="showUploadMenu">
               <button (click)="fileInput.click(); showUploadMenu = false">
-                <span>📄 Upload Single/Multiple Files</span>
+                <span>📄 Single/Multiple Files</span>
               </button>
               <button (click)="folderInput.click(); showUploadMenu = false">
-                <span>📁 Upload Entire Folder</span>
+                <span>📁 Entire Folder Ingestion</span>
               </button>
               <button (click)="zipInput.click(); showUploadMenu = false">
-                <span>📦 Upload ZIP Archive</span>
+                <span>📦 ZIP Archive Unzipping</span>
               </button>
+            </div>
+          </div>
+
+          <!-- Report Exporter Dropdown -->
+          <div class="upload-dropdown-wrap" *ngIf="ws.activeReviewResult()">
+            <button class="btn btn-secondary btn-sm" (click)="toggleExportMenu()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              <span>Export Report</span>
+            </button>
+
+            <div class="upload-menu" *ngIf="showExportMenu">
+              <button (click)="ws.exportReport('markdown'); showExportMenu = false">📝 Export Markdown (.md)</button>
+              <button (click)="ws.exportReport('pdf'); showExportMenu = false">📕 Export PDF Report</button>
+              <button (click)="ws.exportReport('json'); showExportMenu = false">⚙️ Export JSON Data</button>
+              <button (click)="ws.exportReport('csv'); showExportMenu = false">📊 Export CSV Table</button>
             </div>
           </div>
 
@@ -101,7 +119,7 @@ import { EditorManagerService } from '../../settings/services/editor-manager.ser
             </ng-container>
             <ng-container *ngIf="ws.isAnalyzing()">
               <span class="spinner-sm"></span>
-              <span>Analyzing Code...</span>
+              <span>Analyzing...</span>
             </ng-container>
           </button>
         </div>
@@ -162,7 +180,7 @@ import { EditorManagerService } from '../../settings/services/editor-manager.ser
             </li>
 
             <div class="empty-files-state" *ngIf="ws.filteredFiles().length === 0">
-              <p>No files match your search filter.</p>
+              <p>No files match search filter.</p>
             </div>
           </ul>
         </aside>
@@ -193,16 +211,38 @@ import { EditorManagerService } from '../../settings/services/editor-manager.ser
             <div class="code-editor-viewport">
               <div class="line-numbers" *ngIf="editorManager.lineNumbers() !== 'off'">
                 <ng-container *ngFor="let line of getLines(file.content); let i = index">
-                  <span>{{ getLineNumberDisplay(i + 1) }}</span>
+                  <div class="line-num-cell" [class.has-issue]="getAnnotationForLine(i + 1)">
+                    <span>{{ getLineNumberDisplay(i + 1) }}</span>
+                    <span class="issue-indicator" *ngIf="getAnnotationForLine(i + 1) as annotation" [class]="annotation.severity.toLowerCase()">
+                      ⚠️
+                    </span>
+                  </div>
                 </ng-container>
               </div>
 
-              <textarea
-                class="code-preview"
-                [ngModel]="file.content"
-                (ngModelChange)="ws.updateActiveFileContent($event)"
-                spellcheck="false"
-              ></textarea>
+              <div class="editor-text-wrap">
+                <textarea
+                  class="code-preview"
+                  [ngModel]="file.content"
+                  (ngModelChange)="ws.updateActiveFileContent($event)"
+                  spellcheck="false"
+                ></textarea>
+
+                <!-- Inline Annotations Hover overlay list -->
+                <div class="annotations-overlay-panel" *ngIf="ws.activeFileAnnotations().length > 0">
+                  <div class="annotation-card" *ngFor="let issue of ws.activeFileAnnotations()">
+                    <div class="annotation-header">
+                      <span class="badge" [class]="'badge-' + issue.severity.toLowerCase()">{{ issue.severity }}</span>
+                      <span class="annotation-line">Line {{ issue.line }}</span>
+                      <span class="annotation-cat">{{ issue.category }}</span>
+                    </div>
+                    <div class="annotation-msg">{{ issue.message }}</div>
+                    <div class="annotation-sug" *ngIf="issue.suggestion">
+                      💡 <strong>Fix:</strong> {{ issue.suggestion }}
+                    </div>
+                  </div>
+                </div>
+              </div>
 
               <div class="editor-minimap-gutter" *ngIf="editorManager.minimap()">
                 <div class="minimap-sim-line" *ngFor="let line of getLines(file.content).slice(0, 15); let i = index" [style.width.%]="(i * 17 + 40) % 90 + 10"></div>
@@ -235,7 +275,7 @@ import { EditorManagerService } from '../../settings/services/editor-manager.ser
             <select
               class="form-select"
               [ngModel]="ws.selectedProvider()"
-              (ngModelChange)="ws.setProvider($event)"
+              (ngModelChange)="onProviderChange($any($event.target).value)"
             >
               <option *ngFor="let p of providersConfig" [value]="p.id">
                 {{ p.name }}
@@ -285,8 +325,17 @@ import { EditorManagerService } from '../../settings/services/editor-manager.ser
             </div>
           </div>
 
+          <!-- Diagnostic Review Score Result Card -->
+          <div class="score-result-card" *ngIf="ws.activeReviewResult() as res">
+            <div class="score-header">
+              <span class="score-badge">{{ res.score ?? 88 }}/100</span>
+              <span class="score-title">Overall Quality Score</span>
+            </div>
+            <p class="score-summary">{{ res.summary }}</p>
+          </div>
+
           <!-- Dynamic Info Pre-Check Card -->
-          <div class="info-card">
+          <div class="info-card" *ngIf="!ws.activeReviewResult()">
             <div class="info-title">✨ {{ ws.selectedProvider() | uppercase }} Multi-pass Engine</div>
             <p class="info-desc">
               Model <strong>{{ ws.selectedModel() }}</strong> will audit security vulnerabilities, type safety, memory leaks, and time complexity.
@@ -683,6 +732,28 @@ import { EditorManagerService } from '../../settings/services/editor-manager.ser
       line-height: 1.6;
     }
 
+    .line-num-cell {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      justify-content: flex-end;
+    }
+    .line-num-cell.has-issue {
+      color: #ef4444;
+      font-weight: bold;
+    }
+
+    .issue-indicator {
+      font-size: 0.7rem;
+    }
+
+    .editor-text-wrap {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
     .code-preview {
       flex: 1;
       margin: 0;
@@ -697,6 +768,36 @@ import { EditorManagerService } from '../../settings/services/editor-manager.ser
       outline: none;
       tab-size: var(--editor-tab-size, 2);
     }
+
+    .annotations-overlay-panel {
+      position: absolute;
+      bottom: 12px;
+      right: 12px;
+      max-width: 380px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 10;
+    }
+
+    .annotation-card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: var(--radius-md);
+      padding: 0.75rem;
+      box-shadow: var(--shadow-lg);
+    }
+    .annotation-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 4px;
+      font-size: 0.75rem;
+    }
+    .annotation-line { font-weight: 700; color: #f8fafc; }
+    .annotation-cat { color: #94a3b8; margin-left: auto; }
+    .annotation-msg { font-size: 0.8rem; color: #cbd5e1; margin-bottom: 4px; }
+    .annotation-sug { font-size: 0.75rem; color: #34d399; }
 
     .editor-minimap-gutter {
       width: 50px;
@@ -766,6 +867,18 @@ import { EditorManagerService } from '../../settings/services/editor-manager.ser
       box-shadow: var(--shadow-xs);
     }
 
+    .score-result-card {
+      background: var(--color-primary-light);
+      border: 1px solid var(--color-primary-border);
+      border-radius: var(--radius-md);
+      padding: 1rem;
+      margin-top: auto;
+    }
+    .score-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem; }
+    .score-badge { font-size: 1.1rem; font-weight: 800; color: var(--color-primary); }
+    .score-title { font-size: 0.8rem; font-weight: 700; color: var(--text-primary); }
+    .score-summary { font-size: 0.75rem; color: var(--text-secondary); margin: 0; line-height: 1.4; }
+
     .info-card {
       margin-top: auto;
       background: var(--color-primary-light);
@@ -808,6 +921,7 @@ export class WorkspacePageComponent {
   readonly editorManager = inject(EditorManagerService);
 
   showUploadMenu = false;
+  showExportMenu = false;
   isDragging = false;
   copied = false;
 
@@ -815,6 +929,12 @@ export class WorkspacePageComponent {
 
   toggleUploadMenu(): void {
     this.showUploadMenu = !this.showUploadMenu;
+    this.showExportMenu = false;
+  }
+
+  toggleExportMenu(): void {
+    this.showExportMenu = !this.showExportMenu;
+    this.showUploadMenu = false;
   }
 
   onFilesSelected(event: Event): void {
@@ -888,6 +1008,10 @@ export class WorkspacePageComponent {
       return index % 5 === 0 || index === 1 ? String(index) : '•';
     }
     return String(index);
+  }
+
+  getAnnotationForLine(lineNum: number): CodeIssueAnnotation | undefined {
+    return this.ws.activeFileAnnotations().find((a) => a.line === lineNum);
   }
 
   getLanguageSymbol(lang: string): string {

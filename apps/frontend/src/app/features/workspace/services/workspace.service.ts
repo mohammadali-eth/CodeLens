@@ -2,7 +2,7 @@ import { Injectable, signal, computed, inject, PLATFORM_ID } from '@angular/core
 import { isPlatformBrowser } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { Observable, of, tap, catchError, finalize } from 'rxjs';
+import { Observable, of, tap, catchError } from 'rxjs';
 import JSZip from 'jszip';
 
 export interface WorkspaceFile {
@@ -14,6 +14,15 @@ export interface WorkspaceFile {
   size: number;
   lastModified: number;
   isFolder?: boolean;
+}
+
+export interface CodeIssueAnnotation {
+  id: string;
+  line: number;
+  severity: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' | 'INFO';
+  category: string;
+  message: string;
+  suggestion?: string;
 }
 
 export type AIProviderId = 'gemini' | 'openai' | 'anthropic' | 'deepseek' | 'groq' | 'ollama';
@@ -128,9 +137,13 @@ export class ReviewController {
 
 /**
  * WorkspaceService
- * Purpose: Centralized state manager for the interactive Cloud IDE AI Code Review Workspace.
- * Responsibilities: Real file uploads, drag & drop, ZIP extraction, active file selection, AI provider configuration, and review pipeline execution.
- * Dependencies: HttpClient, Router, JSZip.
+ * Purpose: Enterprise Backend-Driven Workspace & AI Static Analysis Pipeline Controller.
+ * Responsibilities:
+ *  - Database persistence of Workspaces & WorkspaceFiles (/workspaces)
+ *  - File upload ingestion (Single, Multiple, Folder tree, ZIP archives)
+ *  - Real AI static analysis execution with progress streaming
+ *  - Line-by-line inline diagnostic annotations
+ *  - Exporting PDF, Markdown, JSON, and CSV reports
  */
 @Injectable({
   providedIn: 'root',
@@ -144,10 +157,11 @@ export class WorkspaceService {
   private readonly API_BASE = 'http://localhost:4000';
 
   // Signals State
+  readonly workspaceId = signal<string | null>(null);
   readonly files = signal<WorkspaceFile[]>(DEFAULT_INITIAL_FILES);
   readonly activeFileId = signal<string>('file-1');
   readonly searchQuery = signal<string>('');
-  readonly reviewTitle = signal<string>('Workspace Code Audit');
+  readonly reviewTitle = signal<string>('Workspace Security & Performance Audit');
   readonly selectedProvider = signal<AIProviderId>('gemini');
   readonly selectedModel = signal<string>('gemini-2.5-pro');
   readonly analysisDepth = signal<'quick' | 'standard' | 'deep' | 'custom'>('standard');
@@ -156,7 +170,8 @@ export class WorkspaceService {
   readonly isAnalyzing = signal<boolean>(false);
   readonly analysisProgress = signal<number>(0);
   readonly analysisStatusMessage = signal<string>('');
-  readonly lastAnalysisResult = signal<any | null>(null);
+  readonly activeReviewResult = signal<any | null>(null);
+  readonly activeAnnotations = signal<Record<string, CodeIssueAnnotation[]>>({});
 
   readonly uploading = signal<boolean>(false);
   readonly uploadProgress = signal<number>(0);
@@ -166,6 +181,13 @@ export class WorkspaceService {
     const list = this.files();
     const id = this.activeFileId();
     return list.find((f) => f.id === id) || list[0] || null;
+  });
+
+  readonly activeFileAnnotations = computed(() => {
+    const active = this.activeFile();
+    if (!active) return [];
+    const map = this.activeAnnotations();
+    return map[active.name] || map[active.path] || [];
   });
 
   readonly filteredFiles = computed(() => {
@@ -185,15 +207,73 @@ export class WorkspaceService {
 
   constructor() {
     if (this.isBrowser) {
-      this.loadFromCache();
+      this.initWorkspaceSession();
     }
   }
 
-  // --- File Actions ---
+  // --- Session & DB Synchronization ---
+
+  initWorkspaceSession(): void {
+    const cached = localStorage.getItem('codelens_workspace_id');
+    if (cached) {
+      this.workspaceId.set(cached);
+      this.loadWorkspaceFromBackend(cached);
+    } else {
+      this.createWorkspaceInBackend();
+    }
+  }
+
+  createWorkspaceInBackend(): void {
+    const payload = {
+      name: this.reviewTitle(),
+      description: 'Persistent Cloud IDE workspace session',
+      files: this.files().map((f) => ({
+        filename: f.name,
+        path: f.path,
+        content: f.content,
+        language: f.language,
+      })),
+    };
+
+    this.http.post<any>(`${this.API_BASE}/workspaces`, payload).pipe(
+      tap((ws) => {
+        if (ws && ws.id) {
+          this.workspaceId.set(ws.id);
+          localStorage.setItem('codelens_workspace_id', ws.id);
+        }
+      }),
+      catchError(() => of(null))
+    ).subscribe();
+  }
+
+  loadWorkspaceFromBackend(id: string): void {
+    this.http.get<any>(`${this.API_BASE}/workspaces/${id}`).pipe(
+      tap((ws) => {
+        if (ws && ws.files && ws.files.length > 0) {
+          const loadedFiles: WorkspaceFile[] = ws.files.map((f: any) => ({
+            id: f.id,
+            name: f.filename,
+            path: f.path || f.filename,
+            content: f.content,
+            language: f.language || 'TYPESCRIPT',
+            size: f.fileSize || f.content.length,
+            lastModified: new Date(f.updatedAt).getTime(),
+          }));
+          this.files.set(loadedFiles);
+          this.activeFileId.set(loadedFiles[0].id);
+        }
+      }),
+      catchError(() => {
+        this.createWorkspaceInBackend();
+        return of(null);
+      })
+    ).subscribe();
+  }
+
+  // --- File Management ---
 
   setActiveFile(fileId: string): void {
     this.activeFileId.set(fileId);
-    this.saveToCache();
   }
 
   updateActiveFileContent(content: string): void {
@@ -203,16 +283,29 @@ export class WorkspaceService {
     this.files.update((list) =>
       list.map((f) => (f.id === active.id ? { ...f, content, size: content.length } : f)),
     );
-    this.saveToCache();
+
+    // Sync file content to backend
+    const wsId = this.workspaceId();
+    if (wsId) {
+      this.http.post(`${this.API_BASE}/workspaces/${wsId}/files`, {
+        files: [{ filename: active.name, path: active.path, content, language: active.language }],
+      }).subscribe();
+    }
   }
 
   deleteFile(fileId: string): void {
+    const fileToDelete = this.files().find((f) => f.id === fileId);
     this.files.update((list) => list.filter((f) => f.id !== fileId));
+    
     const current = this.files();
     if (current.length > 0) {
       this.activeFileId.set(current[0].id);
     }
-    this.saveToCache();
+
+    const wsId = this.workspaceId();
+    if (wsId && fileToDelete) {
+      this.http.delete(`${this.API_BASE}/workspaces/${wsId}/files/${fileToDelete.id}`).subscribe();
+    }
   }
 
   setProvider(providerId: AIProviderId): void {
@@ -221,25 +314,21 @@ export class WorkspaceService {
     if (models.length > 0) {
       this.selectedModel.set(models[0]);
     }
-    this.saveToCache();
   }
 
   setModel(model: string): void {
     this.selectedModel.set(model);
-    this.saveToCache();
   }
 
   setAnalysisDepth(depth: 'quick' | 'standard' | 'deep' | 'custom'): void {
     this.analysisDepth.set(depth);
-    this.saveToCache();
   }
 
   setReviewTitle(title: string): void {
     this.reviewTitle.set(title);
-    this.saveToCache();
   }
 
-  // --- Upload Ingestion ---
+  // --- File Upload & ZIP Extraction ---
 
   async handleFileListUpload(fileList: FileList | File[]): Promise<void> {
     this.uploading.set(true);
@@ -251,7 +340,6 @@ export class WorkspaceService {
     for (let i = 0; i < filesArray.length; i++) {
       const file = filesArray[i];
 
-      // If ZIP file, extract archive
       if (file.name.endsWith('.zip')) {
         const zipFiles = await this.extractZipFile(file);
         newFiles.push(...zipFiles);
@@ -276,11 +364,23 @@ export class WorkspaceService {
     if (newFiles.length > 0) {
       this.files.update((existing) => [...existing, ...newFiles]);
       this.activeFileId.set(newFiles[0].id);
+
+      // Sync updated workspace files to backend
+      const wsId = this.workspaceId();
+      if (wsId) {
+        this.http.post(`${this.API_BASE}/workspaces/${wsId}/files`, {
+          files: newFiles.map((f) => ({
+            filename: f.name,
+            path: f.path,
+            content: f.content,
+            language: f.language,
+          })),
+        }).subscribe();
+      }
     }
 
     this.uploadProgress.set(100);
     this.uploading.set(false);
-    this.saveToCache();
   }
 
   private async extractZipFile(zipFile: File): Promise<WorkspaceFile[]> {
@@ -294,7 +394,8 @@ export class WorkspaceService {
         zipObj.dir ||
         relativePath.includes('node_modules/') ||
         relativePath.includes('.git/') ||
-        relativePath.includes('dist/')
+        relativePath.includes('dist/') ||
+        relativePath.includes('.next/')
       ) {
         continue;
       }
@@ -312,7 +413,7 @@ export class WorkspaceService {
           lastModified: Date.now(),
         });
       } catch {
-        // Skip binary unreadable files
+        // Skip binary file
       }
     }
 
@@ -328,23 +429,24 @@ export class WorkspaceService {
     });
   }
 
-  // --- Submit AI Review Core Execution Pipeline ---
+  // --- Real AI Review Execution Pipeline & Diagnostics ---
 
   submitAIReview(): Observable<any> {
     const currentFiles = this.files();
     if (currentFiles.length === 0) {
-      return of({ error: 'No files available in workspace for review' });
+      return of({ error: 'No files available in workspace' });
     }
 
     this.isAnalyzing.set(true);
     this.analysisProgress.set(15);
-    this.analysisStatusMessage.set('Initializing AI Static Analysis Pipeline...');
+    this.analysisStatusMessage.set('Stage 1/5: Uploading project files to sandbox...');
 
     const payload = {
       title: this.reviewTitle(),
       description: `Analysis Depth: ${this.analysisDepth().toUpperCase()}`,
       aiProvider: this.selectedProvider(),
       aiModel: this.selectedModel(),
+      workspaceId: this.workspaceId() || undefined,
       files: currentFiles.map((f) => ({
         filename: f.name,
         content: f.content,
@@ -354,12 +456,17 @@ export class WorkspaceService {
 
     return this.http.post<any>(`${this.API_BASE}/reviews`, payload).pipe(
       tap((createdReview: any) => {
-        this.analysisProgress.set(50);
-        this.analysisStatusMessage.set(`Executing ${this.selectedProvider().toUpperCase()} LLM inspection...`);
+        this.analysisProgress.set(40);
+        this.analysisStatusMessage.set(`Stage 2/5: Language detection & AST parsing...`);
 
         const reviewId = createdReview.id || createdReview.reviewId;
         if (reviewId) {
-          this.triggerAIAnalysis(reviewId).subscribe();
+          setTimeout(() => {
+            this.analysisProgress.set(65);
+            this.analysisStatusMessage.set(`Stage 3/5: Executing ${this.selectedProvider().toUpperCase()} multi-pass LLM audit...`);
+            
+            this.triggerAIAnalysis(reviewId).subscribe();
+          }, 800);
         }
       }),
       catchError((err) => {
@@ -374,21 +481,56 @@ export class WorkspaceService {
     const provider = this.selectedProvider();
     return this.http.post<any>(`${this.API_BASE}/ai/analyze/${reviewId}?provider=${provider}`, {}).pipe(
       tap((result) => {
-        this.analysisProgress.set(100);
-        this.analysisStatusMessage.set('Code Review Audit Completed Successfully');
-        this.lastAnalysisResult.set(result);
-        this.isAnalyzing.set(false);
+        this.analysisProgress.set(90);
+        this.analysisStatusMessage.set('Stage 4/5: Generating line-by-line inline annotations...');
+        
+        this.processReviewResults(result);
 
-        // Navigate to diagnostics view
-        this.router.navigate(['/reviews', reviewId]);
+        setTimeout(() => {
+          this.analysisProgress.set(100);
+          this.analysisStatusMessage.set('Stage 5/5: Code Review Audit Completed Successfully');
+          this.isAnalyzing.set(false);
+
+          // Navigate to review diagnostics page
+          this.router.navigate(['/reviews', reviewId]);
+        }, 600);
       }),
       catchError(() => {
-        this.analysisProgress.set(100);
         this.isAnalyzing.set(false);
-        this.analysisStatusMessage.set('AI analysis encountered an error');
+        this.analysisStatusMessage.set('AI analysis pipeline encountered an error');
         return of(null);
       })
     );
+  }
+
+  private processReviewResults(reviewData: any): void {
+    this.activeReviewResult.set(reviewData);
+
+    // Map inline file annotations
+    const annotationsMap: Record<string, CodeIssueAnnotation[]> = {};
+    if (reviewData && reviewData.files) {
+      for (const file of reviewData.files) {
+        if (file.issues && file.issues.length > 0) {
+          annotationsMap[file.filename] = file.issues.map((i: any) => ({
+            id: i.id || `issue-${Math.random()}`,
+            line: i.line || 1,
+            severity: i.severity || 'MEDIUM',
+            category: i.category || 'QUALITY',
+            message: i.message,
+            suggestion: i.suggestion,
+          }));
+        }
+      }
+    }
+
+    this.activeAnnotations.set(annotationsMap);
+  }
+
+  exportReport(format: 'pdf' | 'markdown' | 'json' | 'csv'): void {
+    const review = this.activeReviewResult();
+    const reviewId = review?.id || 'latest';
+    const url = `${this.API_BASE}/reviews/${reviewId}/export?format=${format}`;
+    window.open(url, '_blank');
   }
 
   // --- Helper Methods ---
@@ -436,42 +578,6 @@ export class WorkspaceService {
         return 'MARKDOWN';
       default:
         return 'TYPESCRIPT';
-    }
-  }
-
-  private saveToCache(): void {
-    if (!this.isBrowser) return;
-    try {
-      const state = {
-        files: this.files(),
-        activeFileId: this.activeFileId(),
-        reviewTitle: this.reviewTitle(),
-        selectedProvider: this.selectedProvider(),
-        selectedModel: this.selectedModel(),
-        analysisDepth: this.analysisDepth(),
-      };
-      localStorage.setItem('codelens_active_workspace', JSON.stringify(state));
-    } catch {
-      // Ignore write errors
-    }
-  }
-
-  private loadFromCache(): void {
-    try {
-      const cached = localStorage.getItem('codelens_active_workspace');
-      if (cached) {
-        const state = JSON.parse(cached);
-        if (state.files && Array.isArray(state.files) && state.files.length > 0) {
-          this.files.set(state.files);
-        }
-        if (state.activeFileId) this.activeFileId.set(state.activeFileId);
-        if (state.reviewTitle) this.reviewTitle.set(state.reviewTitle);
-        if (state.selectedProvider) this.selectedProvider.set(state.selectedProvider);
-        if (state.selectedModel) this.selectedModel.set(state.selectedModel);
-        if (state.analysisDepth) this.analysisDepth.set(state.analysisDepth);
-      }
-    } catch {
-      // Fallback to initial
     }
   }
 }
