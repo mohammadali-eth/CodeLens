@@ -1,6 +1,6 @@
 /**
  * Workspace Services Barrel Export
  * Purpose: Public API for Workspace Feature Services.
- * Responsibilities: Exports WorkspaceApiService.
+ * Responsibilities: Exports WorkspaceService.
  */
-export const WORKSPACE_SERVICES_TOKEN = 'CDL_WORKSPACE_SERVICES';
+export * from './workspace.service';

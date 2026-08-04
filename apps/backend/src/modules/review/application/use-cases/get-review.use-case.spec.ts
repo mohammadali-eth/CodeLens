@@ -12,6 +12,7 @@ describe('GetReviewUseCase', () => {
   beforeEach(() => {
     mockReviewRepository = {
       findById: jest.fn(),
+      findAll: jest.fn(),
       findByCreatorId: jest.fn(),
       save: jest.fn(),
       update: jest.fn(),
