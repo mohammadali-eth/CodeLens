@@ -24,6 +24,7 @@ export class AIService {
       temperature?: number;
       timeoutMs?: number;
       skipCache?: boolean;
+      analysisDepth?: string;
     },
   ): Promise<UnifiedAIResponse> {
     const startTime = Date.now();
@@ -31,7 +32,7 @@ export class AIService {
     this.logger.log(
       `Starting AI Analysis Pipeline for ${files.length} file(s). Preferred Provider: ${
         options?.preferredProvider || 'default'
-      }`,
+      }, Depth: ${options?.analysisDepth || 'standard'}`,
     );
 
     // 1. Sanitize code files
@@ -47,7 +48,7 @@ export class AIService {
     // 3. Cache lookup
     const cacheKey = this.cacheService.generateCacheKey(
       sanitizedFiles,
-      provider.providerName,
+      `${provider.providerName}:${options?.analysisDepth || 'standard'}`,
       'v1.0',
     );
 
@@ -67,7 +68,8 @@ export class AIService {
     const execOptions: AIExecutionOptions = {
       model: options?.model,
       temperature: options?.temperature,
-      timeoutMs: options?.timeoutMs || 30000,
+      timeoutMs: options?.timeoutMs || 45000,
+      analysisDepth: options?.analysisDepth || 'standard',
     };
 
     let response: UnifiedAIResponse;
@@ -80,28 +82,40 @@ export class AIService {
     } catch (error) {
       const errMessage = error instanceof Error ? error.message : String(error);
       this.logger.error(
-        `Primary provider "${provider.providerName}" failed: ${errMessage}. Attempting fallback execution...`,
+        `Primary provider "${provider.providerName}" failed: ${errMessage}`,
       );
 
-      provider = this.providerFactory.getFallbackProvider(
-        provider.providerName,
-      );
-      this.logger.log(
-        `Executing fallback analysis via provider: ${provider.providerName}`,
-      );
+      try {
+        provider = this.providerFactory.getFallbackProvider(
+          provider.providerName,
+        );
+        this.logger.log(
+          `Executing fallback analysis via provider: ${provider.providerName}`,
+        );
 
-      const fallbackResult = await provider.analyze(
-        sanitizedFiles,
-        execOptions,
-      );
-      response = {
-        ...fallbackResult,
-        processingTimeMs: Date.now() - startTime,
-      };
+        const fallbackResult = await provider.analyze(
+          sanitizedFiles,
+          execOptions,
+        );
+        response = {
+          ...fallbackResult,
+          processingTimeMs: Date.now() - startTime,
+        };
+      } catch (fallbackError) {
+        this.logger.error(
+          `Fallback provider execution failed: ${
+            fallbackError instanceof Error ? fallbackError.message : fallbackError
+          }`,
+        );
+        // Throw original or fallback error so downstream review status correctly becomes FAILED
+        throw error;
+      }
     }
 
     // 4. Cache storing
-    await this.cacheService.set(cacheKey, response);
+    if (response) {
+      await this.cacheService.set(cacheKey, response);
+    }
 
     return response;
   }

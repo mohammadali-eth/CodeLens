@@ -42,6 +42,18 @@ export class CreateReviewDto {
   @IsOptional()
   aiProvider?: string;
 
+  @IsString()
+  @IsOptional()
+  aiModel?: string;
+
+  @IsString()
+  @IsOptional()
+  analysisDepth?: string;
+
+  @IsString()
+  @IsOptional()
+  workspaceId?: string;
+
   @IsArray()
   @ArrayMinSize(1, { message: 'At least one code file is required' })
   @ValidateNested({ each: true })

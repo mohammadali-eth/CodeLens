@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { CodeFilePayload } from '../../domain/ai-engine-service.interface';
-import { SYSTEM_PROMPT_V1 } from './templates/system.prompt';
+import { SYSTEM_PROMPT_V1, getDepthInstructions } from './templates/system.prompt';
 import { buildReviewPromptV1 } from './templates/review.prompt';
 import { getLanguageGuideline } from './templates/language.prompt';
 import { OPTIMIZATION_INSTRUCTION_V1 } from './templates/optimization.prompt';
@@ -16,12 +16,14 @@ export interface CompiledPrompt {
 export class PromptTemplateRegistry {
   public readonly defaultVersion = 'v1.0';
 
-  compileReviewPrompt(files: CodeFilePayload[]): CompiledPrompt {
+  compileReviewPrompt(files: CodeFilePayload[], analysisDepth?: string): CompiledPrompt {
     const primaryLanguage = files.find((f) => f.language)?.language;
     const languageRules = getLanguageGuideline(primaryLanguage);
+    const depthInstructions = getDepthInstructions(analysisDepth);
 
     const systemPrompt = [
       SYSTEM_PROMPT_V1,
+      depthInstructions,
       languageRules,
       OPTIMIZATION_INSTRUCTION_V1,
       EXPLANATION_INSTRUCTION_V1,

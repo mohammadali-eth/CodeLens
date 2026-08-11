@@ -8,6 +8,7 @@ export interface AIExecutionOptions {
   systemPrompt?: string;
   promptVersion?: string;
   timeoutMs?: number;
+  analysisDepth?: string;
 }
 
 export interface IAIProvider {

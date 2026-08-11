@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import {
   IAIProvider,
   AIExecutionOptions,
@@ -10,12 +10,13 @@ import {
 import { CodeFilePayload } from '../../domain/ai-engine-service.interface';
 import { PromptTemplateRegistry } from '../../application/prompt-engine/prompt-template-registry';
 import { AISanitizerService } from '../sanitizer/ai-sanitizer.service';
+import { ScoringService } from '../../application/scoring/scoring.service';
 import { Severity } from '../../../review/domain/severity.enum';
 
 /**
  * GeminiProvider
  * Purpose: Google Gemini LLM Adapter (Primary AI Engine for CodeLens Platform).
- * Supports: Real Google Generative AI REST API call with structured JSON schema response, token usage tracking, and deterministic fallback static audit.
+ * Executes real Google Generative AI REST API calls with structured JSON output, token tracking, and deterministic backend scoring.
  */
 @Injectable()
 export class GeminiProvider implements IAIProvider {
@@ -26,6 +27,7 @@ export class GeminiProvider implements IAIProvider {
   constructor(
     private readonly promptRegistry: PromptTemplateRegistry,
     private readonly sanitizerService: AISanitizerService,
+    private readonly scoringService: ScoringService,
   ) {}
 
   async analyze(
@@ -36,7 +38,9 @@ export class GeminiProvider implements IAIProvider {
     const model = options?.model || this.defaultModel;
 
     this.logger.log(
-      `Executing Gemini AI Analysis on ${files.length} file(s) using model: ${model}`,
+      `Executing Gemini AI Analysis on ${files.length} file(s) using model: ${model}, Depth: ${
+        options?.analysisDepth || 'standard'
+      }`,
     );
 
     const sanitizedFiles = files.map((f) => ({
@@ -45,42 +49,35 @@ export class GeminiProvider implements IAIProvider {
       language: f.language,
     }));
 
-    const compiledPrompt =
-      this.promptRegistry.compileReviewPrompt(sanitizedFiles);
+    const compiledPrompt = this.promptRegistry.compileReviewPrompt(
+      sanitizedFiles,
+      options?.analysisDepth,
+    );
 
     const apiKey = process.env.GEMINI_API_KEY;
-
-    if (apiKey) {
-      this.logger.log(
-        `Connecting to Google Gemini API (model: ${model})...`,
-      );
-      try {
-        const realAiResponse = await this.callGeminiApi(
-          apiKey,
-          model,
-          compiledPrompt.systemPrompt,
-          compiledPrompt.userPrompt,
-          sanitizedFiles,
-          Date.now() - startTime,
-        );
-        return realAiResponse;
-      } catch (err: any) {
-        this.logger.error(
-          `Gemini API Call failed: ${err.message}. Falling back to deterministic inspection engine.`,
-        );
-      }
-    } else {
-      this.logger.warn(
-        'GEMINI_API_KEY not configured. Running Gemini Provider in deterministic inspection mode.',
+    if (!apiKey) {
+      this.logger.error('GEMINI_API_KEY environment variable is not configured.');
+      throw new BadRequestException(
+        'Google Gemini API Key is missing in backend server configuration (GEMINI_API_KEY).',
       );
     }
 
-    return this.generateAnalysisResponse(
-      sanitizedFiles,
-      model,
-      compiledPrompt.version,
-      Date.now() - startTime,
-    );
+    this.logger.log(`Connecting to Google Gemini API (model: ${model})...`);
+
+    try {
+      return await this.callGeminiApi(
+        apiKey,
+        model,
+        compiledPrompt.systemPrompt,
+        compiledPrompt.userPrompt,
+        sanitizedFiles,
+        Date.now() - startTime,
+      );
+    } catch (err: any) {
+      const msg = err instanceof Error ? err.message : String(err);
+      this.logger.error(`Gemini API execution error: ${msg}`);
+      throw new BadRequestException(`Google Gemini Analysis Failed: ${msg}`);
+    }
   }
 
   private async callGeminiApi(
@@ -93,7 +90,7 @@ export class GeminiProvider implements IAIProvider {
   ): Promise<UnifiedAIResponse> {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
-    const promptText = `${systemPrompt}\n\nStrict Output Requirements:\nReturn valid JSON matching:\n{\n  "summary": "string",\n  "explanation": "string",\n  "qualityScore": number,\n  "timeComplexity": "string",\n  "spaceComplexity": "string",\n  "bugs": [{"filename": "string", "line": number, "severity": "CRITICAL"|"HIGH"|"MEDIUM"|"LOW", "category": "string", "message": "string", "suggestion": "string"}],\n  "bestPractices": [],\n  "optimizations": [],\n  "cleanCodeSuggestions": []\n}\n\nSOURCE CODE FOR REVIEW:\n${userPrompt}`;
+    const promptText = `${systemPrompt}\n\nStrict Output Requirements:\nReturn valid JSON matching:\n{\n  "summary": "string",\n  "explanation": "string",\n  "timeComplexity": "string",\n  "spaceComplexity": "string",\n  "findings": [\n    {\n      "filename": "string",\n      "line": number,\n      "severity": "CRITICAL"|"HIGH"|"MEDIUM"|"LOW"|"INFO",\n      "category": "SECURITY"|"CORRECTNESS"|"PERFORMANCE"|"RELIABILITY"|"MAINTAINABILITY"|"BEST_PRACTICE"|"STYLE",\n      "message": "string",\n      "suggestion": "string"\n    }\n  ],\n  "improvedCode": {\n    "filename": "string"\n  }\n}\n\nSOURCE CODE FOR REVIEW:\n${userPrompt}`;
 
     const payload = {
       contents: [
@@ -102,7 +99,7 @@ export class GeminiProvider implements IAIProvider {
         },
       ],
       generationConfig: {
-        temperature: 0.2,
+        temperature: 0.1,
         responseMimeType: 'application/json',
       },
     };
@@ -119,59 +116,106 @@ export class GeminiProvider implements IAIProvider {
     }
 
     const data = await res.json();
-    const candidateText =
+    let candidateText =
       data?.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
 
-    const parsed = JSON.parse(candidateText);
+    // Clean JSON response by removing markdown fences if present
+    candidateText = candidateText
+      .replace(/^```json\s*/i, '')
+      .replace(/^```\s*/, '')
+      .replace(/```$/g, '')
+      .trim();
+
+    let parsed: any;
+    try {
+      parsed = JSON.parse(candidateText);
+    } catch (parseError) {
+      this.logger.error(`JSON Parse failure on Gemini candidate text: ${candidateText}`);
+      throw new Error(
+        `Gemini returned malformed response output that could not be parsed as JSON.`,
+      );
+    }
+
+    // Extract all findings from findings array, or legacy keys (bugs, errors, bestPractices, optimizations, cleanCodeSuggestions)
+    const rawFindings: any[] = Array.isArray(parsed.findings)
+      ? parsed.findings
+      : [
+          ...(parsed.bugs || []),
+          ...(parsed.errors || []),
+          ...(parsed.bestPractices || []),
+          ...(parsed.optimizations || []),
+          ...(parsed.cleanCodeSuggestions || []),
+        ];
+
+    const mappedBugs: CodeIssuePayload[] = [];
+    const mappedBestPractices: CodeIssuePayload[] = [];
+    const mappedOptimizations: CodeIssuePayload[] = [];
+    const mappedCleanCode: CodeIssuePayload[] = [];
+
+    const allFindingsForScoring: CodeIssuePayload[] = [];
+
+    for (const item of rawFindings) {
+      const filename = item.filename || files[0]?.filename || 'src/file.ts';
+      const line = typeof item.line === 'number' && item.line > 0 ? item.line : 1;
+      const rawSev = (item.severity || 'MEDIUM').toUpperCase();
+      let severity: Severity = Severity.MEDIUM;
+      if (rawSev === 'CRITICAL') severity = Severity.CRITICAL;
+      else if (rawSev === 'HIGH') severity = Severity.HIGH;
+      else if (rawSev === 'MEDIUM') severity = Severity.MEDIUM;
+      else if (rawSev === 'LOW') severity = Severity.LOW;
+      else if (rawSev === 'INFO') severity = Severity.INFO;
+
+      const category = (item.category || 'BUG').toUpperCase();
+      const message = item.message || item.description || 'Issue identified during code review';
+      const suggestion = item.suggestion || item.recommendation || '';
+
+      const findingPayload: CodeIssuePayload = {
+        filename,
+        line,
+        severity,
+        category,
+        message,
+        suggestion,
+        confidenceScore: 0.95,
+      };
+
+      allFindingsForScoring.push(findingPayload);
+
+      if (category.includes('SECURITY') || category.includes('BUG') || severity === Severity.CRITICAL || severity === Severity.HIGH) {
+        mappedBugs.push(findingPayload);
+      } else if (category.includes('PERFORMANCE') || category.includes('OPTIMIZ')) {
+        mappedOptimizations.push(findingPayload);
+      } else if (category.includes('BEST') || category.includes('PRACTICE')) {
+        mappedBestPractices.push(findingPayload);
+      } else {
+        mappedCleanCode.push(findingPayload);
+      }
+    }
+
+    // Compute deterministic quality score
+    const scoringResult = this.scoringService.calculateScore(allFindingsForScoring);
 
     const improvedCodeMap: Record<string, string> = {};
     for (const f of files) {
-      improvedCodeMap[f.filename] = f.content;
+      improvedCodeMap[f.filename] =
+        parsed.improvedCode && parsed.improvedCode[f.filename]
+          ? parsed.improvedCode[f.filename]
+          : f.content;
     }
 
     return {
-      summary: parsed.summary || `Gemini AI Code Audit Complete (${files.length} files).`,
+      summary:
+        parsed.summary ||
+        `Gemini AI Code Audit Complete (${files.length} files). Score: ${scoringResult.overallScore}/100 with ${allFindingsForScoring.length} total findings.`,
       explanation: parsed.explanation || 'Analyzed with Google Gemini LLM API.',
-      bugs: (parsed.bugs || []).map((b: any) => ({
-        filename: b.filename || files[0]?.filename || 'unknown',
-        line: b.line || 1,
-        severity: (b.severity as Severity) || Severity.MEDIUM,
-        category: b.category || 'BUG',
-        message: b.message || 'Issue detected by Gemini',
-        suggestion: b.suggestion || 'Apply recommended fix',
-        confidenceScore: 0.95,
-      })),
+      bugs: mappedBugs,
       errors: [],
-      bestPractices: (parsed.bestPractices || []).map((b: any) => ({
-        filename: b.filename || files[0]?.filename || 'unknown',
-        line: b.line || 1,
-        severity: Severity.LOW,
-        category: 'BEST_PRACTICE',
-        message: b.message || 'Best practice suggestion',
-        suggestion: b.suggestion,
-        confidenceScore: 0.9,
-      })),
-      optimizations: (parsed.optimizations || []).map((b: any) => ({
-        filename: b.filename || files[0]?.filename || 'unknown',
-        line: b.line || 1,
-        severity: Severity.MEDIUM,
-        category: 'PERFORMANCE',
-        message: b.message || 'Performance optimization opportunity',
-        suggestion: b.suggestion,
-        confidenceScore: 0.92,
-      })),
-      cleanCodeSuggestions: (parsed.cleanCodeSuggestions || []).map((b: any) => ({
-        filename: b.filename || files[0]?.filename || 'unknown',
-        line: b.line || 1,
-        severity: Severity.LOW,
-        category: 'STYLE',
-        message: b.message || 'Clean code suggestion',
-        suggestion: b.suggestion,
-        confidenceScore: 0.9,
-      })),
+      bestPractices: mappedBestPractices,
+      optimizations: mappedOptimizations,
+      cleanCodeSuggestions: mappedCleanCode,
       timeComplexity: parsed.timeComplexity || 'O(N)',
       spaceComplexity: parsed.spaceComplexity || 'O(1)',
-      qualityScore: typeof parsed.qualityScore === 'number' ? parsed.qualityScore : 88,
+      qualityScore: scoringResult.overallScore,
       improvedCode: improvedCodeMap,
       processingTimeMs: Math.max(150, elapsedMs),
       provider: this.providerName,
@@ -182,91 +226,6 @@ export class GeminiProvider implements IAIProvider {
         promptTokens: data?.usageMetadata?.promptTokenCount || 500,
         completionTokens: data?.usageMetadata?.candidatesTokenCount || 300,
         totalTokens: data?.usageMetadata?.totalTokenCount || 800,
-      },
-    };
-  }
-
-  private generateAnalysisResponse(
-    files: CodeFilePayload[],
-    model: string,
-    promptVersion: string,
-    processingTimeMs: number,
-  ): UnifiedAIResponse {
-    const bugs: CodeIssuePayload[] = [];
-    const bestPractices: CodeIssuePayload[] = [];
-    const optimizations: CodeIssuePayload[] = [];
-    const cleanCodeSuggestions: CodeIssuePayload[] = [];
-    const improvedCodeMap: Record<string, string> = {};
-
-    for (const file of files) {
-      if (file.content.includes('eval(')) {
-        bugs.push({
-          filename: file.filename,
-          line: 5,
-          severity: Severity.CRITICAL,
-          category: 'SECURITY' as const,
-          message: 'Critical vulnerability: Arbitrary code execution via eval().',
-          suggestion: 'Refactor code to avoid evaluating raw string expressions dynamically.',
-          confidenceScore: 0.99,
-        });
-      }
-
-      if (file.content.includes('console.log')) {
-        cleanCodeSuggestions.push({
-          filename: file.filename,
-          line: 12,
-          severity: Severity.LOW,
-          category: 'STYLE' as const,
-          message: 'Leftover console logging detected.',
-          suggestion: 'Replace raw console logging with enterprise Logger abstraction.',
-          confidenceScore: 0.95,
-        });
-      }
-
-      if (file.content.includes('var ')) {
-        bestPractices.push({
-          filename: file.filename,
-          line: 2,
-          severity: Severity.LOW,
-          category: 'BEST_PRACTICE' as const,
-          message: 'Legacy "var" keyword used.',
-          suggestion: 'Use "const" or "let" for block-scoped variable declarations.',
-          confidenceScore: 0.96,
-        });
-      }
-
-      improvedCodeMap[file.filename] = file.content.replace(/var /g, 'const ');
-    }
-
-    const qualityScore = Math.max(
-      30,
-      100 -
-        bugs.length * 25 -
-        bestPractices.length * 5 -
-        cleanCodeSuggestions.length * 3,
-    );
-
-    return {
-      summary: `Gemini AI Scan complete. Analyzed ${files.length} file(s). Quality Score: ${qualityScore}/100.`,
-      explanation: `Google Gemini static audit inspected ${files.length} source file(s) for security vulnerabilities, type safety, and performance efficiency.`,
-      bugs,
-      errors: [],
-      bestPractices,
-      optimizations,
-      cleanCodeSuggestions,
-      timeComplexity: 'O(N)',
-      spaceComplexity: 'O(1)',
-      qualityScore,
-      improvedCode: improvedCodeMap,
-      processingTimeMs: Math.max(120, processingTimeMs),
-      provider: this.providerName,
-      model,
-      confidenceScore: 0.95,
-      promptVersion,
-      tokenUsage: {
-        promptTokens: 450 * files.length,
-        completionTokens: 280,
-        totalTokens: 450 * files.length + 280,
       },
     };
   }

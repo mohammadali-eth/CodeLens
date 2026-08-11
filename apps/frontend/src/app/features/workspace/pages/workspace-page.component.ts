@@ -332,12 +332,14 @@ import { RouterLink } from '@angular/router';
           <!-- Diagnostic Review Score Result Card -->
           <div class="score-result-card" *ngIf="ws.activeReviewResult() as res">
             <div class="score-header">
-              <span class="score-badge">{{ res.score ?? 100 }}/100</span>
-              <span class="score-title">Overall Quality Score</span>
+              <span class="score-badge" [class.badge-failed]="res.status === 'FAILED'" [style.background]="res.status === 'FAILED' ? '#fee2e2' : undefined" [style.color]="res.status === 'FAILED' ? '#dc2626' : undefined">
+                {{ res.status === 'FAILED' ? 'FAILED' : ((res.score !== null && res.score !== undefined) ? res.score + '/100' : 'N/A') }}
+              </span>
+              <span class="score-title">{{ res.status === 'FAILED' ? 'Analysis Failed' : 'Overall Quality Score' }}</span>
             </div>
             <p class="score-summary">{{ res.summary }}</p>
             <a *ngIf="res.id" [routerLink]="['/reviews', res.id]" class="btn btn-primary btn-sm btn-full-report" style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-top: 1rem; width: 100%;">
-              <span>View Full Diagnostics Report</span>
+              <span>View Diagnostics Report</span>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="5" y1="12" x2="19" y2="12"/>
                 <polyline points="12 5 19 12 12 19"/>

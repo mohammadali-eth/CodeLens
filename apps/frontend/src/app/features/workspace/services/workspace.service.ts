@@ -135,16 +135,6 @@ export class ReviewController {
   },
 ];
 
-/**
- * WorkspaceService
- * Purpose: Enterprise Backend-Driven Workspace & AI Static Analysis Pipeline Controller.
- * Responsibilities:
- *  - Database persistence of Workspaces & WorkspaceFiles (/workspaces)
- *  - File upload ingestion (Single, Multiple, Folder tree, ZIP archives)
- *  - Real AI static analysis execution with progress streaming
- *  - Line-by-line inline diagnostic annotations
- *  - Exporting PDF, Markdown, JSON, and CSV reports
- */
 @Injectable({
   providedIn: 'root',
 })
@@ -445,6 +435,8 @@ export class WorkspaceService {
       title: this.reviewTitle(),
       description: `Analysis Depth: ${this.analysisDepth().toUpperCase()}`,
       aiProvider: this.selectedProvider(),
+      aiModel: this.selectedModel(),
+      analysisDepth: this.analysisDepth(),
       workspaceId: this.workspaceId() || undefined,
       files: currentFiles.map((f) => ({
         filename: f.name,
@@ -465,12 +457,19 @@ export class WorkspaceService {
             this.analysisStatusMessage.set(`Stage 3/5: Executing ${this.selectedProvider().toUpperCase()} multi-pass LLM audit...`);
             
             this.triggerAIAnalysis(reviewId).subscribe();
-          }, 800);
+          }, 600);
         }
       }),
       catchError((err) => {
         this.isAnalyzing.set(false);
-        this.analysisStatusMessage.set('Failed to submit code review job');
+        const errMsg = err?.error?.message || err?.message || 'Failed to submit code review job';
+        this.analysisStatusMessage.set(`Review Submission Failed: ${errMsg}`);
+        this.activeReviewResult.set({
+          status: 'FAILED',
+          summary: errMsg,
+          score: null,
+          files: [],
+        });
         return of(null);
       })
     );
@@ -481,22 +480,33 @@ export class WorkspaceService {
     return this.http.post<any>(`${this.API_BASE}/ai/analyze/${reviewId}?provider=${provider}`, {}).pipe(
       tap((result) => {
         this.analysisProgress.set(90);
-        this.analysisStatusMessage.set('Stage 4/5: Generating line-by-line inline annotations...');
+        this.analysisStatusMessage.set('Stage 4/5: Normalizing issue callouts and line annotations...');
         
         this.processReviewResults(result);
 
         setTimeout(() => {
           this.analysisProgress.set(100);
-          this.analysisStatusMessage.set('Stage 5/5: Code Review Audit Completed Successfully');
+          this.analysisStatusMessage.set('Stage 5/5: Code Review Audit Completed');
           this.isAnalyzing.set(false);
 
           // Navigate to review diagnostics page
           this.router.navigate(['/reviews', reviewId]);
-        }, 600);
+        }, 500);
       }),
-      catchError(() => {
+      catchError((err) => {
         this.isAnalyzing.set(false);
-        this.analysisStatusMessage.set('AI analysis pipeline encountered an error');
+        const errMsg = err?.error?.message || err?.message || 'AI engine failed to execute analysis';
+        this.analysisStatusMessage.set(`AI Analysis Failed: ${errMsg}`);
+        this.activeReviewResult.set({
+          id: reviewId,
+          status: 'FAILED',
+          summary: `Analysis Error: ${errMsg}`,
+          score: null,
+          aiProvider: provider,
+          aiModel: this.selectedModel(),
+          files: [],
+        });
+        this.router.navigate(['/reviews', reviewId]);
         return of(null);
       })
     );
@@ -528,11 +538,9 @@ export class WorkspaceService {
   exportReport(format: 'pdf' | 'markdown' | 'json' | 'csv'): void {
     const review = this.activeReviewResult();
     const reviewId = review?.id || 'latest';
-    const url = `${this.API_BASE}/reviews/${reviewId}/export?format=${format}`;
+    const url = `${this.API_BASE}/reviews/${reviewId}/report`;
     window.open(url, '_blank');
   }
-
-  // --- Helper Methods ---
 
   detectLanguage(filename: string): string {
     const ext = filename.split('.').pop()?.toLowerCase();

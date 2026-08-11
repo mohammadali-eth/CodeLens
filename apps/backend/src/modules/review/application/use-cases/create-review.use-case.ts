@@ -7,10 +7,7 @@ import { CreateReviewDto } from '../../infrastructure/controllers/dtos/create-re
 
 /**
  * CreateReviewUseCase
- * Purpose: Application use case for creating and persisting new code review requests.
- * Responsibilities: Enforces submission rules, instantiates domain entities, and saves review records.
- * Dependencies: IReviewRepository interface, CreateReviewDto.
- * Future Extensibility: Emits background queue jobs for asynchronous AI inspection workers.
+ * Application use case for creating and persisting new code review requests.
  */
 @Injectable()
 export class CreateReviewUseCase {
@@ -51,15 +48,14 @@ export class CreateReviewUseCase {
       repository: dto.repository,
       branch: dto.branch || 'main',
       aiProvider: dto.aiProvider || 'gemini',
+      aiModel: dto.aiModel,
+      workspaceId: dto.workspaceId,
     });
 
     // Persist review aggregate in database
     return await this.reviewRepository.save(review);
   }
 
-  /**
-   * Helper function to detect programming language from file extension if not explicitly specified.
-   */
   private inferLanguageFromFilename(
     filename: string,
     explicitLanguage?: string,

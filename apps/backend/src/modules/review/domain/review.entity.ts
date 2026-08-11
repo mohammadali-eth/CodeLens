@@ -259,6 +259,7 @@ export class Review {
       repository?: string;
       branch?: string;
       aiProvider?: string;
+      aiModel?: string;
       parentReviewId?: string;
       workspaceId?: string;
     },
@@ -275,7 +276,7 @@ export class Review {
       null,
       null,
       options?.aiProvider || 'gemini',
-      null,
+      options?.aiModel || null,
       null,
       creatorId,
       options?.parentReviewId || null,

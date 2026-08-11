@@ -55,6 +55,7 @@ export class AnalyzeCodeReviewUseCase {
         })),
         {
           preferredProvider: providerChoice || processingReview.aiProvider,
+          model: processingReview.aiModel || undefined,
         },
       );
 
@@ -74,12 +75,21 @@ export class AnalyzeCodeReviewUseCase {
         ...aiResponse.cleanCodeSuggestions,
       ];
 
+      const totalFiles = processingReview.files.length;
+
       const updatedFiles: ReviewFile[] = processingReview.files.map((file) => {
         const fileIssues: CodeIssue[] = allRawIssues
-          .filter((issue) => issue.filename === file.filename)
+          .filter((issue) => {
+            if (totalFiles === 1) return true;
+            if (!issue.filename) return true;
+            if (issue.filename === file.filename) return true;
+            const issueBase = issue.filename.split('/').pop();
+            const fileBase = file.filename.split('/').pop();
+            return issueBase === fileBase;
+          })
           .map((issue) => ({
             id: randomUUID(),
-            line: issue.line,
+            line: issue.line || 1,
             severity: issue.severity,
             category: issue.category,
             message: issue.message,

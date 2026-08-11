@@ -21,6 +21,7 @@ import { AICacheService } from './infrastructure/cache/ai-cache.service';
 import { ReviewQueueProducer } from './infrastructure/queue/review-queue.producer';
 import { ReviewQueueProcessor } from './infrastructure/queue/review-queue.processor';
 import { ReviewEventsGateway } from './infrastructure/websockets/review-events.gateway';
+import { ScoringService } from './application/scoring/scoring.service';
 
 @Module({
   imports: [AuthModule, forwardRef(() => ReviewModule)],
@@ -30,6 +31,7 @@ import { ReviewEventsGateway } from './infrastructure/websockets/review-events.g
     PromptTemplateRegistry,
     AIResponseParser,
     AICacheService,
+    ScoringService,
     GeminiService,
     OpenAIService,
     OllamaService,
@@ -50,6 +52,7 @@ import { ReviewEventsGateway } from './infrastructure/websockets/review-events.g
     AIService,
     AICacheService,
     AIResponseParser,
+    ScoringService,
     AIFactoryService,
     AIProviderFactory,
     AnalyzeCodeReviewUseCase,

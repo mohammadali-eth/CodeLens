@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { IAIProvider } from '../../domain/ai-provider.interface';
 import { GeminiProvider } from '../adapters/gemini-provider';
 import { OpenAIProvider } from '../adapters/openai-provider';
@@ -36,7 +36,7 @@ export class AIProviderFactory {
     const provider = this.providers.get(targetName);
     if (!provider) {
       this.logger.warn(
-        `Provider "${targetName}" not registered. Falling back to default GeminiProvider.`,
+        `Provider "${targetName}" not registered. Defaulting to GeminiProvider.`,
       );
       return this.geminiProvider;
     }
@@ -45,22 +45,27 @@ export class AIProviderFactory {
   }
 
   getFallbackProvider(failedProviderName: string): IAIProvider {
-    const fallbackHierarchy = ['gemini', 'openai', 'ollama', 'mock'];
+    // Real providers sequence. DO NOT include mock as silent fallback for production errors.
+    const fallbackHierarchy = ['gemini', 'openai', 'ollama'];
     const currentIndex = fallbackHierarchy.indexOf(
       failedProviderName.toLowerCase(),
     );
 
-    for (let i = currentIndex + 1; i < fallbackHierarchy.length; i++) {
-      const candidateName = fallbackHierarchy[i];
-      const candidate = this.providers.get(candidateName);
-      if (candidate) {
-        this.logger.warn(
-          `Fallback triggered: Switching from failed provider "${failedProviderName}" to "${candidateName}".`,
-        );
-        return candidate;
+    if (currentIndex !== -1) {
+      for (let i = currentIndex + 1; i < fallbackHierarchy.length; i++) {
+        const candidateName = fallbackHierarchy[i];
+        const candidate = this.providers.get(candidateName);
+        if (candidate) {
+          this.logger.warn(
+            `Fallback triggered: Switching from failed provider "${failedProviderName}" to "${candidateName}".`,
+          );
+          return candidate;
+        }
       }
     }
 
-    return this.mockProvider;
+    throw new BadRequestException(
+      `AI Provider "${failedProviderName}" failed and no operational fallback LLM provider is available.`,
+    );
   }
 }
