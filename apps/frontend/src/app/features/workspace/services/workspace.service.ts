@@ -37,7 +37,7 @@ export const AI_PROVIDERS_CONFIG: ProviderOption[] = [
   {
     id: 'gemini',
     name: 'Google Gemini',
-    models: ['gemini-2.5-pro', 'gemini-2.0-flash', 'gemini-1.5-pro'],
+    models: ['gemini-1.5-pro', 'gemini-2.0-flash', 'gemini-1.5-flash'],
   },
   {
     id: 'openai',
@@ -163,7 +163,7 @@ export class WorkspaceService {
   readonly searchQuery = signal<string>('');
   readonly reviewTitle = signal<string>('Workspace Security & Performance Audit');
   readonly selectedProvider = signal<AIProviderId>('gemini');
-  readonly selectedModel = signal<string>('gemini-2.5-pro');
+  readonly selectedModel = signal<string>('gemini-1.5-pro');
   readonly analysisDepth = signal<'quick' | 'standard' | 'deep' | 'custom'>('standard');
 
   // Pipeline Status Signals
@@ -445,7 +445,6 @@ export class WorkspaceService {
       title: this.reviewTitle(),
       description: `Analysis Depth: ${this.analysisDepth().toUpperCase()}`,
       aiProvider: this.selectedProvider(),
-      aiModel: this.selectedModel(),
       workspaceId: this.workspaceId() || undefined,
       files: currentFiles.map((f) => ({
         filename: f.name,

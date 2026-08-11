@@ -19,10 +19,12 @@ import { EditorManagerService } from '../../settings/services/editor-manager.ser
  *  - Inline Code Annotations (line-by-line severity callouts, bug indicators, AI suggestions)
  *  - Exporting PDF, Markdown, JSON, and CSV reports
  */
+import { RouterLink } from '@angular/router';
+
 @Component({
   selector: 'cdl-workspace-page',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div
@@ -221,10 +223,12 @@ import { EditorManagerService } from '../../settings/services/editor-manager.ser
               </div>
 
               <div class="editor-text-wrap">
+                <pre class="code-highlight-backdrop" aria-hidden="true"><code [innerHTML]="getHighlightedCode(file.content, file.language)"></code></pre>
                 <textarea
                   class="code-preview"
                   [ngModel]="file.content"
                   (ngModelChange)="ws.updateActiveFileContent($event)"
+                  (scroll)="onEditorScroll($event)"
                   spellcheck="false"
                 ></textarea>
 
@@ -328,10 +332,17 @@ import { EditorManagerService } from '../../settings/services/editor-manager.ser
           <!-- Diagnostic Review Score Result Card -->
           <div class="score-result-card" *ngIf="ws.activeReviewResult() as res">
             <div class="score-header">
-              <span class="score-badge">{{ res.score ?? 88 }}/100</span>
+              <span class="score-badge">{{ res.score ?? 100 }}/100</span>
               <span class="score-title">Overall Quality Score</span>
             </div>
             <p class="score-summary">{{ res.summary }}</p>
+            <a *ngIf="res.id" [routerLink]="['/reviews', res.id]" class="btn btn-primary btn-sm btn-full-report" style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-top: 1rem; width: 100%;">
+              <span>View Full Diagnostics Report</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="5" y1="12" x2="19" y2="12"/>
+                <polyline points="12 5 19 12 12 19"/>
+              </svg>
+            </a>
           </div>
 
           <!-- Dynamic Info Pre-Check Card -->
@@ -749,24 +760,74 @@ import { EditorManagerService } from '../../settings/services/editor-manager.ser
 
     .editor-text-wrap {
       flex: 1;
-      display: flex;
-      flex-direction: column;
       position: relative;
+      overflow: hidden;
     }
 
+    .code-highlight-backdrop {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      margin: 0;
+      padding: 0 1rem;
+      font-family: var(--editor-font-family, 'Fira Code', monospace);
+      font-size: var(--editor-font-size, 14px);
+      line-height: 1.6;
+      white-space: pre;
+      overflow: hidden;
+      pointer-events: none;
+      box-sizing: border-box;
+      color: #e2e8f0;
+      tab-size: var(--editor-tab-size, 2);
+    }
+
+    .code-highlight-backdrop code {
+      font-family: inherit;
+      font-size: inherit;
+      line-height: inherit;
+      white-space: pre;
+      display: block;
+    }
+
+    .syn-comment { color: #7f848e; font-style: italic; }
+    .syn-string { color: #98c379; }
+    .syn-decorator { color: #e5c07b; font-weight: 600; }
+    .syn-keyword { color: #c678dd; font-weight: 600; }
+    .syn-type { color: #56b6c2; font-weight: 600; }
+    .syn-fn { color: #61afef; font-weight: 500; }
+    .syn-number { color: #d19a66; }
+    .syn-property { color: #e06c75; }
+    .syn-punct { color: #abb2bf; }
+
     .code-preview {
-      flex: 1;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
       margin: 0;
       padding: 0 1rem;
       background: transparent;
       border: none;
-      color: #f8fafc;
+      color: transparent;
+      caret-color: #38bdf8;
       font-family: var(--editor-font-family, 'Fira Code', monospace);
       font-size: var(--editor-font-size, 14px);
       line-height: 1.6;
       resize: none;
       outline: none;
+      white-space: pre;
+      box-sizing: border-box;
+      overflow: auto;
       tab-size: var(--editor-tab-size, 2);
+      z-index: 2;
+    }
+
+    .code-preview::selection {
+      background: rgba(56, 189, 248, 0.25);
+      color: transparent;
     }
 
     .annotations-overlay-panel {
@@ -1029,5 +1090,112 @@ export class WorkspacePageComponent {
     if (l.includes('sql')) return 'DB';
     if (l.includes('markdown') || l === 'md') return 'MD';
     return 'CODE';
+  }
+
+  getHighlightedCode(code: string, language: string = 'typescript'): string {
+    if (!code) return '';
+
+    const escapeHtml = (str: string) =>
+      str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+
+    const lines = code.split('\n');
+
+    return lines
+      .map((line) => {
+        if (!line.trim()) return '&nbsp;';
+
+        const trimmed = line.trim();
+        // Full line comment
+        if (
+          trimmed.startsWith('//') ||
+          trimmed.startsWith('#') ||
+          trimmed.startsWith('/*') ||
+          trimmed.startsWith('*')
+        ) {
+          return `<span class="syn-comment">${escapeHtml(line)}</span>`;
+        }
+
+        let escaped = escapeHtml(line);
+        const tokens: string[] = [];
+
+        const saveToken = (html: string) => {
+          tokens.push(html);
+          return `___TOKEN_${tokens.length - 1}___`;
+        };
+
+        // 1. Strings (single, double, backtick quotes)
+        escaped = escaped.replace(/(["'])(?:(?=(\\?))\2[\s\S])*?\1|`[\s\S]*?`/g, (m) =>
+          saveToken(`<span class="syn-string">${m}</span>`)
+        );
+
+        // 2. Comments (inline // or #)
+        escaped = escaped.replace(/(\/\/|#).*/g, (m) =>
+          saveToken(`<span class="syn-comment">${m}</span>`)
+        );
+
+        // 3. Decorators (@Injectable, @Component, etc)
+        escaped = escaped.replace(/@\w+/g, (m) =>
+          saveToken(`<span class="syn-decorator">${m}</span>`)
+        );
+
+        // 4. Keywords
+        const keywords =
+          /\b(export|import|from|class|interface|type|async|await|return|const|let|var|function|if|else|try|catch|throw|new|typeof|instanceof|public|private|protected|readonly|extends|implements|default|case|switch|break|continue|for|while|do|in|of|void|null|undefined|true|false|def|self|struct|enum|fn|pub|use|mod|package|func|select|where|insert|into|update|delete)\b/g;
+        escaped = escaped.replace(keywords, (m) =>
+          saveToken(`<span class="syn-keyword">${m}</span>`)
+        );
+
+        // 5. Types & Built-in Objects
+        const types =
+          /\b(string|number|boolean|any|unknown|never|Record|Promise|Array|Object|String|Number|Boolean|JSON|Math|Console|Date|Error|RegExp|Set|Map|Injectable|Component|OnInit|Observable|Signal|HttpClient|WorkspaceService|WorkspacePageComponent|Int|Float|DateTime)\b/g;
+        escaped = escaped.replace(types, (m) =>
+          saveToken(`<span class="syn-type">${m}</span>`)
+        );
+
+        // 6. Function calls (foo(...) or bar.baz(...))
+        escaped = escaped.replace(/\b([a-zA-Z_$][a-zA-Z0-9_$]*)(?=\s*\()/g, (m) =>
+          saveToken(`<span class="syn-fn">${m}</span>`)
+        );
+
+        // 7. Numbers
+        escaped = escaped.replace(/\b\d+(\.\d+)?\b/g, (m) =>
+          saveToken(`<span class="syn-number">${m}</span>`)
+        );
+
+        // 8. Properties / keys (e.g. filename:, content:, "key":)
+        escaped = escaped.replace(/\b([a-zA-Z_$][a-zA-Z0-9_$]*)(?=\s*:)/g, (m) =>
+          saveToken(`<span class="syn-property">${m}</span>`)
+        );
+
+        // 9. Operators & Punctuation ({}, [], (), =>, =, +, -, *, /, :, ;)
+        escaped = escaped.replace(/(=&gt;|&lt;|=|:|\{|\}|\(|\)|\[|\]|;|,|\.|\+|-|\*|\/)/g, (m) =>
+          saveToken(`<span class="syn-punct">${m}</span>`)
+        );
+
+        // Restore saved tokens
+        for (let i = tokens.length - 1; i >= 0; i--) {
+          escaped = escaped.replace(`___TOKEN_${i}___`, tokens[i]);
+        }
+
+        return escaped;
+      })
+      .join('\n');
+  }
+
+  onEditorScroll(event: Event): void {
+    const target = event.target as HTMLElement;
+    const parent = target.parentElement;
+    if (parent) {
+      const backdrop = parent.querySelector('.code-highlight-backdrop') as HTMLElement;
+      if (backdrop) {
+        backdrop.scrollTop = target.scrollTop;
+        backdrop.scrollLeft = target.scrollLeft;
+      }
+    }
   }
 }

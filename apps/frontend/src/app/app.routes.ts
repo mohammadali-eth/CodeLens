@@ -113,6 +113,14 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'reviews/:id',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/reviews/pages/review-result-page.component').then(
+        (m) => m.ReviewResultPageComponent
+      ),
+  },
+  {
     path: 'reviews',
     canActivate: [authGuard],
     loadComponent: () =>
