@@ -150,7 +150,7 @@ export class WorkspaceService {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly isBrowser = isPlatformBrowser(this.platformId);
 
-  private readonly API_BASE = '/api';
+  private readonly API_BASE = 'http://localhost:4000';
 
   // Core Reactive Signals
   readonly workspaceId = signal<string | null>(null);

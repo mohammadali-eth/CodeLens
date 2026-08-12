@@ -55,7 +55,7 @@ export interface AdminDashboardSummary {
   providedIn: 'root',
 })
 export class DashboardService {
-  private readonly baseUrl = '/api/dashboard';
+  private readonly baseUrl = 'http://localhost:4000/dashboard';
 
   constructor(private readonly http: HttpClient) {}
 
