@@ -10,7 +10,11 @@ export interface CodeIssuePayload {
     | 'PERFORMANCE'
     | 'STYLE'
     | 'COMPLEXITY'
-    | 'BEST_PRACTICE';
+    | 'BEST_PRACTICE'
+    | 'RELIABILITY'
+    | 'MAINTAINABILITY'
+    | 'CORRECTNESS'
+    | (string & {});
   message: string;
   suggestion?: string;
   confidenceScore?: number;

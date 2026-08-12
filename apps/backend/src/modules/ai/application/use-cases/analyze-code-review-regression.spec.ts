@@ -3,6 +3,7 @@ import { GeminiProvider } from '../../infrastructure/adapters/gemini-provider';
 import { PromptTemplateRegistry } from '../prompt-engine/prompt-template-registry';
 import { AISanitizerService } from '../../infrastructure/sanitizer/ai-sanitizer.service';
 import { Severity } from '../../../review/domain/severity.enum';
+import { CodeIssuePayload } from '../../domain/unified-ai-response.interface';
 
 describe('AI Code Review Pipeline Regression Suite', () => {
   let scoringService: ScoringService;
@@ -19,7 +20,7 @@ describe('AI Code Review Pipeline Regression Suite', () => {
 
   describe('Deterministic Scoring Engine Rules', () => {
     it('Scenario 1: Code with syntax errors must NOT receive a perfect 100 score', () => {
-      const findings = [
+      const findings: CodeIssuePayload[] = [
         {
           filename: 'broken.ts',
           line: 4,
@@ -36,7 +37,7 @@ describe('AI Code Review Pipeline Regression Suite', () => {
     });
 
     it('Scenario 2: Code with exposed secret keys must trigger critical security deductions', () => {
-      const findings = [
+      const findings: CodeIssuePayload[] = [
         {
           filename: 'config.ts',
           line: 2,
@@ -54,7 +55,7 @@ describe('AI Code Review Pipeline Regression Suite', () => {
     });
 
     it('Scenario 3: Code with SQL Injection must penalize Security score drastically', () => {
-      const findings = [
+      const findings: CodeIssuePayload[] = [
         {
           filename: 'user.repository.ts',
           line: 15,
@@ -70,7 +71,7 @@ describe('AI Code Review Pipeline Regression Suite', () => {
     });
 
     it('Scenario 4: Code with infinite loops / unhandled performance bugs must lower score', () => {
-      const findings = [
+      const findings: CodeIssuePayload[] = [
         {
           filename: 'loop.ts',
           line: 8,
