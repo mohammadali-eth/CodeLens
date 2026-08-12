@@ -14,6 +14,10 @@ export class CreateCodeFileDto {
   filename!: string;
 
   @IsString()
+  @IsOptional()
+  path?: string;
+
+  @IsString()
   content!: string;
 
   @IsString()
