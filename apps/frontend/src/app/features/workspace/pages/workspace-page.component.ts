@@ -1,30 +1,21 @@
 import {
   Component,
   inject,
+  ViewChild,
   ChangeDetectionStrategy,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { WorkspaceService, AIProviderId, AI_PROVIDERS_CONFIG, CodeIssueAnnotation } from '../services/workspace.service';
 import { EditorManagerService } from '../../settings/services/editor-manager.service';
-
-/**
- * WorkspacePageComponent
- * Purpose: Production-grade AI Code Review Cloud IDE Workspace.
- * Features:
- *  - Persistent backend Workspace & File management (/workspaces)
- *  - Single/Multi-file upload, Folder ingestion, JSZip archive extraction, Drag & Drop
- *  - Dynamic AI Provider & Model list selection (Gemini, OpenAI, Anthropic, DeepSeek, Groq, Ollama)
- *  - Real AI static analysis execution with progress streaming
- *  - Inline Code Annotations (line-by-line severity callouts, bug indicators, AI suggestions)
- *  - Exporting PDF, Markdown, JSON, and CSV reports
- */
-import { RouterLink } from '@angular/router';
+import { MonacoEditorComponent } from '../components/monaco-editor/monaco-editor.component';
+import { getLanguageDisplayName, getLanguageSymbol } from '../utils/language-detector';
 
 @Component({
   selector: 'cdl-workspace-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, MonacoEditorComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div
@@ -166,8 +157,8 @@ import { RouterLink } from '@angular/router';
               [class.active]="file.id === ws.activeFileId()"
               (click)="ws.setActiveFile(file.id)"
             >
-              <span class="lang-icon-badge" [class]="file.language.toLowerCase()">
-                {{ getLanguageSymbol(file.language) }}
+              <span class="lang-icon-badge" [title]="getLangDisplay(file.name)">
+                {{ getLangSymbol(file.name) }}
               </span>
               <span class="file-name" [title]="file.path">{{ file.name }}</span>
               
@@ -187,14 +178,14 @@ import { RouterLink } from '@angular/router';
           </ul>
         </aside>
 
-        <!-- Center Column: Monaco / Code Viewport Editor -->
+        <!-- Center Column: Monaco Browser IDE Editor -->
         <main class="editor-container">
           <div class="editor-placeholder" *ngIf="ws.activeFile() as file">
             <!-- Tab Bar & Metadata -->
             <div class="editor-header">
               <div class="tab-item active">
-                <span class="lang-icon-badge" [class]="file.language.toLowerCase()">
-                  {{ getLanguageSymbol(file.language) }}
+                <span class="lang-icon-badge" [title]="getLangDisplay(file.name)">
+                  {{ getLangSymbol(file.name) }}
                 </span>
                 <span>{{ file.name }}</span>
               </div>
@@ -203,53 +194,39 @@ import { RouterLink } from '@angular/router';
                 <button class="btn-copy" (click)="copyCode(file.content)">
                   <span>{{ copied ? 'Copied!' : 'Copy Code' }}</span>
                 </button>
-                <span class="lang-tag">{{ file.language }}</span>
+                <span class="lang-tag">{{ getLangDisplay(file.name) }}</span>
                 <span class="encoding-tag">UTF-8</span>
                 <span class="size-tag">{{ (file.size / 1024) | number:'1.1-1' }} KB</span>
               </div>
             </div>
 
-            <!-- Interactive Code Viewport -->
-            <div class="code-editor-viewport">
-              <div class="line-numbers" *ngIf="editorManager.lineNumbers() !== 'off'">
-                <ng-container *ngFor="let line of getLines(file.content); let i = index">
-                  <div class="line-num-cell" [class.has-issue]="getAnnotationForLine(i + 1)">
-                    <span>{{ getLineNumberDisplay(i + 1) }}</span>
-                    <span class="issue-indicator" *ngIf="getAnnotationForLine(i + 1) as annotation" [class]="annotation.severity.toLowerCase()">
-                      ⚠️
-                    </span>
+            <!-- Monaco Editor Viewport -->
+            <div class="code-editor-viewport monaco-viewport">
+              <cdl-monaco-editor
+                #monacoEditor
+                [activeFile]="file"
+                [lineNumbers]="editorManager.lineNumbers()"
+                [minimapEnabled]="editorManager.minimap()"
+                (contentChange)="ws.updateActiveFileContent($event)"
+              ></cdl-monaco-editor>
+
+              <!-- Inline Annotations Panel -->
+              <div class="annotations-overlay-panel" *ngIf="ws.activeFileAnnotations().length > 0">
+                <div 
+                  class="annotation-card" 
+                  *ngFor="let issue of ws.activeFileAnnotations()"
+                  (click)="monacoEditor.revealLine(issue.line)"
+                >
+                  <div class="annotation-header">
+                    <span class="badge" [class]="'badge-' + issue.severity.toLowerCase()">{{ issue.severity }}</span>
+                    <span class="annotation-line">Line {{ issue.line }}</span>
+                    <span class="annotation-cat">{{ issue.category }}</span>
                   </div>
-                </ng-container>
-              </div>
-
-              <div class="editor-text-wrap">
-                <pre class="code-highlight-backdrop" aria-hidden="true"><code [innerHTML]="getHighlightedCode(file.content, file.language)"></code></pre>
-                <textarea
-                  class="code-preview"
-                  [ngModel]="file.content"
-                  (ngModelChange)="ws.updateActiveFileContent($event)"
-                  (scroll)="onEditorScroll($event)"
-                  spellcheck="false"
-                ></textarea>
-
-                <!-- Inline Annotations Hover overlay list -->
-                <div class="annotations-overlay-panel" *ngIf="ws.activeFileAnnotations().length > 0">
-                  <div class="annotation-card" *ngFor="let issue of ws.activeFileAnnotations()">
-                    <div class="annotation-header">
-                      <span class="badge" [class]="'badge-' + issue.severity.toLowerCase()">{{ issue.severity }}</span>
-                      <span class="annotation-line">Line {{ issue.line }}</span>
-                      <span class="annotation-cat">{{ issue.category }}</span>
-                    </div>
-                    <div class="annotation-msg">{{ issue.message }}</div>
-                    <div class="annotation-sug" *ngIf="issue.suggestion">
-                      💡 <strong>Fix:</strong> {{ issue.suggestion }}
-                    </div>
+                  <div class="annotation-msg">{{ issue.message }}</div>
+                  <div class="annotation-sug" *ngIf="issue.suggestion">
+                    💡 <strong>Fix:</strong> {{ issue.suggestion }}
                   </div>
                 </div>
-              </div>
-
-              <div class="editor-minimap-gutter" *ngIf="editorManager.minimap()">
-                <div class="minimap-sim-line" *ngFor="let line of getLines(file.content).slice(0, 15); let i = index" [style.width.%]="(i * 17 + 40) % 90 + 10"></div>
               </div>
             </div>
           </div>
@@ -452,451 +429,327 @@ import { RouterLink } from '@angular/router';
     .upload-menu button {
       background: transparent;
       border: none;
-      padding: 0.65rem 1rem;
+      padding: 0.6rem 1rem;
       text-align: left;
-      font-size: 0.8125rem;
+      font-size: 0.825rem;
       color: var(--text-primary);
       cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
       transition: background 0.15s ease;
     }
     .upload-menu button:hover {
-      background: var(--bg-surface-secondary);
+      background: var(--bg-surface-hover);
     }
 
     .analysis-progress-banner {
       background: #0f172a;
-      border-bottom: 1px solid #1e293b;
-      padding: 0.6rem 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+      padding: 0.5rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
     }
-
     .progress-info {
       display: flex;
       align-items: center;
-      gap: 0.75rem;
-      margin-bottom: 0.4rem;
+      gap: 0.5rem;
+      font-size: 0.8rem;
     }
-
     .pulse-dot {
       width: 8px;
       height: 8px;
+      background: var(--color-primary);
       border-radius: 50%;
-      background: #3b82f6;
-      box-shadow: 0 0 8px #3b82f6;
       animation: pulse 1.5s infinite;
     }
-
-    @keyframes pulse {
-      0% { transform: scale(0.95); opacity: 0.8; }
-      50% { transform: scale(1.2); opacity: 1; }
-      100% { transform: scale(0.95); opacity: 0.8; }
-    }
-
-    .status-msg {
-      font-size: 0.8125rem;
-      font-weight: 600;
-      color: #93c5fd;
-      flex: 1;
-    }
-
-    .pct-val {
-      font-size: 0.8125rem;
-      font-weight: 700;
-      color: #60a5fa;
-    }
+    .status-msg { font-weight: 500; color: var(--text-primary); }
+    .pct-val { margin-left: auto; font-weight: 700; color: var(--color-primary); }
 
     .progress-track {
       height: 4px;
-      background: #1e293b;
-      border-radius: 2px;
+      background: var(--bg-surface-secondary);
+      border-radius: var(--radius-full);
       overflow: hidden;
     }
-
     .progress-bar {
       height: 100%;
-      background: linear-gradient(90deg, #2563eb, #3b82f6);
+      background: var(--color-primary);
       transition: width 0.3s ease;
     }
 
     .workspace-grid {
       display: grid;
-      grid-template-columns: 260px 1fr 300px;
+      grid-template-columns: 240px 1fr 300px;
       flex: 1;
       overflow: hidden;
     }
 
-    .sidebar, .context-panel {
+    .sidebar {
       background: var(--bg-surface);
-      padding: 1.25rem;
       border-right: 1px solid var(--border-color);
       display: flex;
       flex-direction: column;
+      user-select: none;
     }
 
-    .context-panel {
-      border-right: none;
-      border-left: 1px solid var(--border-color);
-    }
-
-    .sidebar-section-header, .panel-header {
+    .sidebar-section-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 0.75rem;
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border-color);
     }
-
-    .sidebar h3, .context-panel h3 {
-      font-size: 0.8rem;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: var(--text-muted);
-      font-weight: 700;
+    .sidebar-section-header h3 {
       margin: 0;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
     }
-
     .file-count {
       font-size: 0.7rem;
-      color: var(--text-subtle);
-      font-weight: 600;
+      background: var(--bg-surface-secondary);
+      padding: 0.15rem 0.4rem;
+      border-radius: var(--radius-sm);
+      color: var(--text-secondary);
     }
 
     .explorer-search {
-      margin-bottom: 0.75rem;
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid var(--border-color);
     }
-
     .search-input {
       width: 100%;
       background: var(--bg-app);
       border: 1px solid var(--border-color);
-      border-radius: var(--radius-md);
-      padding: 0.4rem 0.75rem;
-      font-size: 0.8125rem;
+      border-radius: var(--radius-sm);
+      padding: 0.35rem 0.6rem;
+      font-size: 0.75rem;
       color: var(--text-primary);
       outline: none;
       box-sizing: border-box;
     }
-    .search-input:focus {
-      border-color: var(--color-primary);
-    }
 
     .file-list {
       list-style: none;
-      padding: 0;
       margin: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
+      padding: 0.5rem 0;
       overflow-y: auto;
       flex: 1;
     }
-
     .file-list li {
       display: flex;
       align-items: center;
-      gap: 0.6rem;
-      padding: 0.5rem 0.75rem;
-      border-radius: var(--radius-md);
+      gap: 0.5rem;
+      padding: 0.4rem 1rem;
+      font-size: 0.8rem;
       cursor: pointer;
       color: var(--text-secondary);
-      font-size: 0.85rem;
-      font-weight: 500;
       transition: all 0.15s ease;
       position: relative;
     }
-
+    .file-list li:hover {
+      background: var(--bg-surface-hover);
+      color: var(--text-primary);
+    }
     .file-list li.active {
-      background: var(--color-primary-light);
+      background: var(--bg-surface-active);
       color: var(--color-primary);
       font-weight: 600;
     }
-
-    .file-list li:hover:not(.active) {
-      background: var(--bg-surface-secondary);
-      color: var(--text-primary);
+    .lang-icon-badge {
+      font-size: 0.75rem;
     }
-
     .file-name {
-      flex: 1;
+      white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      white-space: nowrap;
+      flex: 1;
     }
-
     .file-delete-btn {
       background: transparent;
       border: none;
       color: var(--text-muted);
-      font-size: 1rem;
       cursor: pointer;
-      display: none;
-      padding: 0 4px;
+      font-size: 0.9rem;
+      opacity: 0;
+      transition: opacity 0.15s ease;
     }
-
     .file-list li:hover .file-delete-btn {
-      display: block;
+      opacity: 1;
     }
     .file-delete-btn:hover {
       color: #ef4444;
     }
-
-    .lang-icon-badge {
-      font-size: 0.65rem;
-      font-weight: 800;
-      padding: 2px 5px;
-      border-radius: 4px;
-      background: #e2e8f0;
-      color: #475569;
-    }
-    .lang-icon-badge.typescript { background: #eff6ff; color: #2563eb; }
-    .lang-icon-badge.javascript { background: #fefce8; color: #ca8a04; }
-    .lang-icon-badge.python { background: #ecfdf5; color: #059669; }
-    .lang-icon-badge.java { background: #fff7ed; color: #ea580c; }
-    .lang-icon-badge.go { background: #e0f2fe; color: #0284c7; }
-    .lang-icon-badge.rust { background: #fef2f2; color: #dc2626; }
-
     .active-dot {
       width: 6px;
       height: 6px;
-      border-radius: 50%;
       background: var(--color-primary);
+      border-radius: 50%;
+    }
+    .empty-files-state {
+      padding: 2rem 1rem;
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--text-muted);
     }
 
     .editor-container {
-      background: var(--bg-app);
-      padding: 1rem;
-      overflow: auto;
       display: flex;
       flex-direction: column;
+      background: #0b0f19;
+      position: relative;
+      overflow: hidden;
     }
 
     .editor-placeholder {
-      background: #0f172a;
-      border-radius: var(--radius-lg);
-      border: 1px solid #1e293b;
-      overflow: hidden;
-      box-shadow: var(--shadow-md);
-      height: 100%;
       display: flex;
       flex-direction: column;
+      height: 100%;
+      width: 100%;
     }
 
     .editor-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 0 1rem;
-      background: #1e293b;
-      border-bottom: 1px solid #334155;
-      height: 38px;
+      background: #0f172a;
+      border-bottom: 1px solid var(--border-color);
+      height: 36px;
+      padding-right: 1rem;
     }
-
-    .tab-item.active {
+    .tab-item {
       display: flex;
       align-items: center;
       gap: 0.5rem;
-      background: #0f172a;
-      color: #f8fafc;
-      padding: 0 0.85rem;
-      height: 38px;
+      padding: 0 1rem;
+      height: 100%;
+      background: #0b0f19;
+      border-right: 1px solid var(--border-color);
+      border-top: 2px solid var(--color-primary);
       font-size: 0.8rem;
-      font-weight: 600;
-      border-top: 2px solid #3b82f6;
+      font-weight: 500;
+      color: var(--text-primary);
     }
-
     .editor-meta {
       display: flex;
       align-items: center;
       gap: 0.75rem;
       font-size: 0.7rem;
-      color: #94a3b8;
     }
-
     .btn-copy {
-      background: rgba(255, 255, 255, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      color: #e2e8f0;
-      padding: 2px 8px;
-      border-radius: 4px;
+      background: transparent;
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      padding: 0.15rem 0.5rem;
+      border-radius: var(--radius-sm);
       font-size: 0.7rem;
       cursor: pointer;
+      transition: all 0.15s ease;
     }
-    .btn-copy:hover { background: rgba(255, 255, 255, 0.2); }
-
-    .lang-tag { color: #60a5fa; font-weight: 600; }
-    .encoding-tag { color: #94a3b8; }
-    .size-tag { color: #64748b; }
-
-    .code-editor-viewport {
-      display: flex;
-      flex: 1;
-      padding: 1rem 0;
-      overflow: hidden;
-      position: relative;
+    .btn-copy:hover {
+      background: var(--bg-surface-hover);
+      color: var(--text-primary);
     }
-
-    .line-numbers {
-      display: flex;
-      flex-direction: column;
-      padding: 0 0.85rem 0 1rem;
-      color: #475569;
-      user-select: none;
-      text-align: right;
-      font-family: var(--editor-font-family, 'Fira Code', monospace);
-      font-size: var(--editor-font-size, 14px);
-      line-height: 1.6;
+    .lang-tag, .encoding-tag, .size-tag {
+      background: var(--bg-surface-secondary);
+      color: var(--text-muted);
+      padding: 0.1rem 0.4rem;
+      border-radius: var(--radius-sm);
+      font-family: monospace;
+      font-weight: 600;
     }
 
-    .line-num-cell {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      justify-content: flex-end;
-    }
-    .line-num-cell.has-issue {
-      color: #ef4444;
-      font-weight: bold;
-    }
-
-    .issue-indicator {
-      font-size: 0.7rem;
-    }
-
-    .editor-text-wrap {
+    .monaco-viewport {
       flex: 1;
       position: relative;
-      overflow: hidden;
-    }
-
-    .code-highlight-backdrop {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      margin: 0;
-      padding: 0 1rem;
-      font-family: var(--editor-font-family, 'Fira Code', monospace);
-      font-size: var(--editor-font-size, 14px);
-      line-height: 1.6;
-      white-space: pre;
-      overflow: hidden;
-      pointer-events: none;
-      box-sizing: border-box;
-      color: #e2e8f0;
-      tab-size: var(--editor-tab-size, 2);
-    }
-
-    .code-highlight-backdrop code {
-      font-family: inherit;
-      font-size: inherit;
-      line-height: inherit;
-      white-space: pre;
-      display: block;
-    }
-
-    .syn-comment { color: #7f848e; font-style: italic; }
-    .syn-string { color: #98c379; }
-    .syn-decorator { color: #e5c07b; font-weight: 600; }
-    .syn-keyword { color: #c678dd; font-weight: 600; }
-    .syn-type { color: #56b6c2; font-weight: 600; }
-    .syn-fn { color: #61afef; font-weight: 500; }
-    .syn-number { color: #d19a66; }
-    .syn-property { color: #e06c75; }
-    .syn-punct { color: #abb2bf; }
-
-    .code-preview {
-      position: absolute;
-      top: 0;
-      left: 0;
+      height: calc(100% - 36px);
       width: 100%;
-      height: 100%;
-      margin: 0;
-      padding: 0 1rem;
-      background: transparent;
-      border: none;
-      color: transparent;
-      caret-color: #38bdf8;
-      font-family: var(--editor-font-family, 'Fira Code', monospace);
-      font-size: var(--editor-font-size, 14px);
-      line-height: 1.6;
-      resize: none;
-      outline: none;
-      white-space: pre;
-      box-sizing: border-box;
-      overflow: auto;
-      tab-size: var(--editor-tab-size, 2);
-      z-index: 2;
-    }
-
-    .code-preview::selection {
-      background: rgba(56, 189, 248, 0.25);
-      color: transparent;
     }
 
     .annotations-overlay-panel {
       position: absolute;
-      bottom: 12px;
-      right: 12px;
-      max-width: 380px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      z-index: 10;
-    }
-
-    .annotation-card {
-      background: #1e293b;
-      border: 1px solid #334155;
+      bottom: 1rem;
+      right: 1rem;
+      width: 320px;
+      max-height: 240px;
+      overflow-y: auto;
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid var(--border-color);
       border-radius: var(--radius-md);
       padding: 0.75rem;
       box-shadow: var(--shadow-lg);
+      backdrop-filter: blur(8px);
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .annotation-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 0.5rem 0.75rem;
+      cursor: pointer;
+      transition: border-color 0.15s ease;
+    }
+    .annotation-card:hover {
+      border-color: var(--color-primary);
     }
     .annotation-header {
       display: flex;
       align-items: center;
-      gap: 6px;
-      margin-bottom: 4px;
-      font-size: 0.75rem;
+      gap: 0.4rem;
+      font-size: 0.7rem;
+      margin-bottom: 0.25rem;
     }
-    .annotation-line { font-weight: 700; color: #f8fafc; }
-    .annotation-cat { color: #94a3b8; margin-left: auto; }
-    .annotation-msg { font-size: 0.8rem; color: #cbd5e1; margin-bottom: 4px; }
-    .annotation-sug { font-size: 0.75rem; color: #34d399; }
+    .annotation-line { font-weight: 700; color: var(--text-primary); }
+    .annotation-cat { color: var(--text-muted); margin-left: auto; }
+    .annotation-msg { font-size: 0.75rem; color: var(--text-primary); line-height: 1.3; }
+    .annotation-sug { font-size: 0.7rem; color: var(--color-primary); margin-top: 0.25rem; }
 
-    .editor-minimap-gutter {
-      width: 50px;
-      background: #030712;
-      border-left: 1px solid #1e293b;
-      padding: 10px 4px;
+    .context-panel {
+      background: var(--bg-surface);
+      border-left: 1px solid var(--border-color);
+      padding: 1rem;
       display: flex;
       flex-direction: column;
-      gap: 5px;
+      gap: 1.25rem;
+      overflow-y: auto;
     }
-
-    .minimap-sim-line {
-      height: 2px;
-      background: rgba(255, 255, 255, 0.2);
-      border-radius: 1px;
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .panel-header h3 {
+      margin: 0;
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
     }
 
     .form-group {
-      margin-bottom: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
     }
-
     .form-group label {
-      display: block;
       font-size: 0.75rem;
       font-weight: 600;
       color: var(--text-secondary);
-      margin-bottom: 0.4rem;
     }
-
     .form-input, .form-select {
-      width: 100%;
       background: var(--bg-app);
       border: 1px solid var(--border-color);
       border-radius: var(--radius-md);
       padding: 0.45rem 0.75rem;
-      font-size: 0.8125rem;
+      font-size: 0.8rem;
       color: var(--text-primary);
       outline: none;
       box-sizing: border-box;
@@ -983,6 +836,8 @@ export class WorkspacePageComponent {
   readonly ws = inject(WorkspaceService);
   readonly editorManager = inject(EditorManagerService);
 
+  @ViewChild('monacoEditor') monacoEditor?: MonacoEditorComponent;
+
   showUploadMenu = false;
   showExportMenu = false;
   isDragging = false;
@@ -1048,156 +903,29 @@ export class WorkspacePageComponent {
   }
 
   onSubmitReview(): void {
+    // Read current content from Monaco model into active file before submission
+    if (this.monacoEditor) {
+      const currentVal = this.monacoEditor.getCurrentValue();
+      if (currentVal) {
+        this.ws.updateActiveFileContent(currentVal);
+      }
+    }
     this.ws.submitAIReview().subscribe();
   }
 
-  copyCode(text: string): void {
-    navigator.clipboard.writeText(text).then(() => {
+  copyCode(fallbackText: string): void {
+    const codeToCopy = this.monacoEditor?.getCurrentValue() || fallbackText;
+    navigator.clipboard.writeText(codeToCopy).then(() => {
       this.copied = true;
       setTimeout(() => (this.copied = false), 2000);
     });
   }
 
-  getLines(content: string): string[] {
-    return (content || '').split('\n');
+  getLangDisplay(filename: string): string {
+    return getLanguageDisplayName(filename);
   }
 
-  getLineNumberDisplay(index: number): string {
-    const mode = this.editorManager.lineNumbers();
-    if (mode === 'relative') {
-      return index === 1 ? '0' : String(index - 1);
-    }
-    if (mode === 'interval') {
-      return index % 5 === 0 || index === 1 ? String(index) : '•';
-    }
-    return String(index);
-  }
-
-  getAnnotationForLine(lineNum: number): CodeIssueAnnotation | undefined {
-    return this.ws.activeFileAnnotations().find((a) => a.line === lineNum);
-  }
-
-  getLanguageSymbol(lang: string): string {
-    const l = (lang || '').toLowerCase();
-    if (l.includes('typescript') || l === 'ts') return 'TS';
-    if (l.includes('javascript') || l === 'js') return 'JS';
-    if (l.includes('python') || l === 'py') return 'PY';
-    if (l.includes('java')) return 'JV';
-    if (l.includes('cpp') || l === 'c++') return 'C++';
-    if (l.includes('go')) return 'GO';
-    if (l.includes('rust') || l === 'rs') return 'RS';
-    if (l.includes('php')) return 'PHP';
-    if (l.includes('json')) return '{}';
-    if (l.includes('yaml') || l === 'yml') return 'YM';
-    if (l.includes('sql')) return 'DB';
-    if (l.includes('markdown') || l === 'md') return 'MD';
-    return 'CODE';
-  }
-
-  getHighlightedCode(code: string, language: string = 'typescript'): string {
-    if (!code) return '';
-
-    const escapeHtml = (str: string) =>
-      str
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
-
-    const lines = code.split('\n');
-
-    return lines
-      .map((line) => {
-        if (!line.trim()) return '&nbsp;';
-
-        const trimmed = line.trim();
-        // Full line comment
-        if (
-          trimmed.startsWith('//') ||
-          trimmed.startsWith('#') ||
-          trimmed.startsWith('/*') ||
-          trimmed.startsWith('*')
-        ) {
-          return `<span class="syn-comment">${escapeHtml(line)}</span>`;
-        }
-
-        let escaped = escapeHtml(line);
-        const tokens: string[] = [];
-
-        const saveToken = (html: string) => {
-          tokens.push(html);
-          return `___TOKEN_${tokens.length - 1}___`;
-        };
-
-        // 1. Strings (single, double, backtick quotes)
-        escaped = escaped.replace(/(["'])(?:(?=(\\?))\2[\s\S])*?\1|`[\s\S]*?`/g, (m) =>
-          saveToken(`<span class="syn-string">${m}</span>`)
-        );
-
-        // 2. Comments (inline // or #)
-        escaped = escaped.replace(/(\/\/|#).*/g, (m) =>
-          saveToken(`<span class="syn-comment">${m}</span>`)
-        );
-
-        // 3. Decorators (@Injectable, @Component, etc)
-        escaped = escaped.replace(/@\w+/g, (m) =>
-          saveToken(`<span class="syn-decorator">${m}</span>`)
-        );
-
-        // 4. Keywords
-        const keywords =
-          /\b(export|import|from|class|interface|type|async|await|return|const|let|var|function|if|else|try|catch|throw|new|typeof|instanceof|public|private|protected|readonly|extends|implements|default|case|switch|break|continue|for|while|do|in|of|void|null|undefined|true|false|def|self|struct|enum|fn|pub|use|mod|package|func|select|where|insert|into|update|delete)\b/g;
-        escaped = escaped.replace(keywords, (m) =>
-          saveToken(`<span class="syn-keyword">${m}</span>`)
-        );
-
-        // 5. Types & Built-in Objects
-        const types =
-          /\b(string|number|boolean|any|unknown|never|Record|Promise|Array|Object|String|Number|Boolean|JSON|Math|Console|Date|Error|RegExp|Set|Map|Injectable|Component|OnInit|Observable|Signal|HttpClient|WorkspaceService|WorkspacePageComponent|Int|Float|DateTime)\b/g;
-        escaped = escaped.replace(types, (m) =>
-          saveToken(`<span class="syn-type">${m}</span>`)
-        );
-
-        // 6. Function calls (foo(...) or bar.baz(...))
-        escaped = escaped.replace(/\b([a-zA-Z_$][a-zA-Z0-9_$]*)(?=\s*\()/g, (m) =>
-          saveToken(`<span class="syn-fn">${m}</span>`)
-        );
-
-        // 7. Numbers
-        escaped = escaped.replace(/\b\d+(\.\d+)?\b/g, (m) =>
-          saveToken(`<span class="syn-number">${m}</span>`)
-        );
-
-        // 8. Properties / keys (e.g. filename:, content:, "key":)
-        escaped = escaped.replace(/\b([a-zA-Z_$][a-zA-Z0-9_$]*)(?=\s*:)/g, (m) =>
-          saveToken(`<span class="syn-property">${m}</span>`)
-        );
-
-        // 9. Operators & Punctuation ({}, [], (), =>, =, +, -, *, /, :, ;)
-        escaped = escaped.replace(/(=&gt;|&lt;|=|:|\{|\}|\(|\)|\[|\]|;|,|\.|\+|-|\*|\/)/g, (m) =>
-          saveToken(`<span class="syn-punct">${m}</span>`)
-        );
-
-        // Restore saved tokens
-        for (let i = tokens.length - 1; i >= 0; i--) {
-          escaped = escaped.replace(`___TOKEN_${i}___`, tokens[i]);
-        }
-
-        return escaped;
-      })
-      .join('\n');
-  }
-
-  onEditorScroll(event: Event): void {
-    const target = event.target as HTMLElement;
-    const parent = target.parentElement;
-    if (parent) {
-      const backdrop = parent.querySelector('.code-highlight-backdrop') as HTMLElement;
-      if (backdrop) {
-        backdrop.scrollTop = target.scrollTop;
-        backdrop.scrollLeft = target.scrollLeft;
-      }
-    }
+  getLangSymbol(filename: string): string {
+    return getLanguageSymbol(filename);
   }
 }

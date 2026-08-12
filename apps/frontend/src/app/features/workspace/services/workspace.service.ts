@@ -4,6 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Observable, of, tap, catchError } from 'rxjs';
 import JSZip from 'jszip';
+import { detectLanguage as detectLangLower, getLanguageDisplayName } from '../utils/language-detector';
 
 export interface WorkspaceFile {
   id: string;
@@ -68,6 +69,28 @@ export const AI_PROVIDERS_CONFIG: ProviderOption[] = [
 
 const DEFAULT_INITIAL_FILES: WorkspaceFile[] = [
   {
+    id: 'file-0',
+    name: 'index.html',
+    path: 'index.html',
+    content: `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CodeLens Enterprise</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
+`,
+    language: 'HTML',
+    size: 285,
+    lastModified: Date.now(),
+  },
+  {
     id: 'file-1',
     name: 'main.ts',
     path: 'src/main.ts',
@@ -98,40 +121,23 @@ export class CodeReviewEngine {
   },
   {
     id: 'file-2',
-    name: 'app.service.ts',
-    path: 'src/app.service.ts',
-    content: `// Application Core Service
-import { Injectable } from '@angular/core';
+    name: 'styles.css',
+    path: 'styles.css',
+    content: `/* Global Application Stylesheet */
+:root {
+  --color-primary: #3b82f6;
+  --color-background: #0b0f19;
+}
 
-@Injectable({ providedIn: 'root' })
-export class AppService {
-  getData(): string {
-    return 'CodeLens AI Review Platform';
-  }
+body {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  background-color: var(--color-background);
 }
 `,
-    language: 'TYPESCRIPT',
-    size: 210,
-    lastModified: Date.now() - 3600000,
-  },
-  {
-    id: 'file-3',
-    name: 'review.controller.ts',
-    path: 'src/review.controller.ts',
-    content: `// NestJS API Controller
-import { Controller, Post, Body } from '@nestjs/common';
-
-@Controller('reviews')
-export class ReviewController {
-  @Post()
-  async createReview(@Body() body: any) {
-    return { status: 'QUEUED', id: 'REV-101' };
-  }
-}
-`,
-    language: 'TYPESCRIPT',
-    size: 240,
-    lastModified: Date.now() - 7200000,
+    language: 'CSS',
+    size: 195,
+    lastModified: Date.now() - 1800000,
   },
 ];
 
@@ -144,12 +150,12 @@ export class WorkspaceService {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly isBrowser = isPlatformBrowser(this.platformId);
 
-  private readonly API_BASE = 'http://localhost:4000';
+  private readonly API_BASE = '/api';
 
-  // Signals State
+  // Core Reactive Signals
   readonly workspaceId = signal<string | null>(null);
   readonly files = signal<WorkspaceFile[]>(DEFAULT_INITIAL_FILES);
-  readonly activeFileId = signal<string>('file-1');
+  readonly activeFileId = signal<string>('file-0');
   readonly searchQuery = signal<string>('');
   readonly reviewTitle = signal<string>('Workspace Security & Performance Audit');
   readonly selectedProvider = signal<AIProviderId>('gemini');
@@ -221,7 +227,7 @@ export class WorkspaceService {
         filename: f.name,
         path: f.path,
         content: f.content,
-        language: f.language,
+        language: this.detectLanguage(f.name, f.content),
       })),
     };
 
@@ -240,15 +246,18 @@ export class WorkspaceService {
     this.http.get<any>(`${this.API_BASE}/workspaces/${id}`).pipe(
       tap((ws) => {
         if (ws && ws.files && ws.files.length > 0) {
-          const loadedFiles: WorkspaceFile[] = ws.files.map((f: any) => ({
-            id: f.id,
-            name: f.filename,
-            path: f.path || f.filename,
-            content: f.content,
-            language: f.language || 'TYPESCRIPT',
-            size: f.fileSize || f.content.length,
-            lastModified: new Date(f.updatedAt).getTime(),
-          }));
+          const loadedFiles: WorkspaceFile[] = ws.files.map((f: any) => {
+            const filename = f.filename || f.path || 'untitled';
+            return {
+              id: f.id,
+              name: filename,
+              path: f.path || filename,
+              content: f.content,
+              language: this.detectLanguage(filename, f.content),
+              size: f.fileSize || f.content.length,
+              lastModified: new Date(f.updatedAt).getTime(),
+            };
+          });
           this.files.set(loadedFiles);
           this.activeFileId.set(loadedFiles[0].id);
         }
@@ -341,7 +350,7 @@ export class WorkspaceService {
           name: file.name,
           path: relPath,
           content: textContent,
-          language: this.detectLanguage(file.name),
+          language: this.detectLanguage(file.name, textContent),
           size: file.size,
           lastModified: file.lastModified || Date.now(),
         });
@@ -398,7 +407,7 @@ export class WorkspaceService {
           name: filename,
           path: relativePath,
           content: textContent,
-          language: this.detectLanguage(filename),
+          language: this.detectLanguage(filename, textContent),
           size: textContent.length,
           lastModified: Date.now(),
         });
@@ -440,13 +449,14 @@ export class WorkspaceService {
       workspaceId: this.workspaceId() || undefined,
       files: currentFiles.map((f) => ({
         filename: f.name,
+        path: f.path,
         content: f.content,
         language: f.language,
       })),
     };
 
     return this.http.post<any>(`${this.API_BASE}/reviews`, payload).pipe(
-      tap((createdReview: any) => {
+      tap((createdReview) => {
         this.analysisProgress.set(40);
         this.analysisStatusMessage.set(`Stage 2/5: Language detection & AST parsing...`);
 
@@ -542,49 +552,7 @@ export class WorkspaceService {
     window.open(url, '_blank');
   }
 
-  detectLanguage(filename: string): string {
-    const ext = filename.split('.').pop()?.toLowerCase();
-    switch (ext) {
-      case 'ts':
-      case 'tsx':
-        return 'TYPESCRIPT';
-      case 'js':
-      case 'jsx':
-      case 'mjs':
-        return 'JAVASCRIPT';
-      case 'py':
-        return 'PYTHON';
-      case 'java':
-        return 'JAVA';
-      case 'cpp':
-      case 'c':
-      case 'h':
-      case 'hpp':
-        return 'CPP';
-      case 'cs':
-        return 'CSHARP';
-      case 'go':
-        return 'GO';
-      case 'rs':
-        return 'RUST';
-      case 'php':
-        return 'PHP';
-      case 'kt':
-      case 'kts':
-        return 'KOTLIN';
-      case 'swift':
-        return 'SWIFT';
-      case 'sql':
-        return 'SQL';
-      case 'json':
-        return 'JSON';
-      case 'yaml':
-      case 'yml':
-        return 'YAML';
-      case 'md':
-        return 'MARKDOWN';
-      default:
-        return 'TYPESCRIPT';
-    }
+  detectLanguage(filename: string, content?: string): string {
+    return getLanguageDisplayName(filename || 'plaintext');
   }
 }
