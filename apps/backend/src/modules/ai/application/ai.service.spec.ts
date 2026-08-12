@@ -6,6 +6,11 @@ import { AIProviderFactory } from '../infrastructure/factories/ai-provider.facto
 import { AISanitizerService } from '../infrastructure/sanitizer/ai-sanitizer.service';
 import { AICacheService } from '../infrastructure/cache/ai-cache.service';
 import { UnifiedAIResponse } from '../domain/unified-ai-response.interface';
+import { TypeScriptAnalyzer } from './analyzers/typescript-analyzer';
+import { SecurityAnalyzer } from './analyzers/security-analyzer';
+import { ComplexityAnalyzer } from './analyzers/complexity-analyzer';
+import { FindingMergeService } from './analyzers/finding-merge.service';
+import { ScoringService } from './scoring/scoring.service';
 
 describe('AIService', () => {
   let service: AIService;
@@ -64,10 +69,21 @@ describe('AIService', () => {
       invalidate: jest.fn().mockResolvedValue(undefined),
     } as any;
 
+    const tsAnalyzer = new TypeScriptAnalyzer();
+    const securityAnalyzer = new SecurityAnalyzer();
+    const complexityAnalyzer = new ComplexityAnalyzer();
+    const mergeService = new FindingMergeService();
+    const scoringService = new ScoringService();
+
     service = new AIService(
       providerFactoryMock,
       sanitizerServiceMock,
       cacheServiceMock,
+      tsAnalyzer,
+      securityAnalyzer,
+      complexityAnalyzer,
+      mergeService,
+      scoringService,
     );
   });
 
@@ -78,7 +94,7 @@ describe('AIService', () => {
     expect(providerFactoryMock.getProvider).toHaveBeenCalled();
     expect(cacheServiceMock.set).toHaveBeenCalledWith(
       'ai:analysis:key',
-      mockResponse,
+      expect.objectContaining({ summary: 'Test summary', provider: 'mock' }),
     );
     expect(result.summary).toBe('Test summary');
   });

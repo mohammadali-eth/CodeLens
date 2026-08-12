@@ -112,7 +112,7 @@ export class OpenAIProvider implements IAIProvider {
     );
 
     return {
-      summary: `OpenAI Scan complete. Inspected ${files.length} file(s). Score: ${qualityScore}/100.`,
+      summary: `OpenAI Analysis complete. Inspected ${files.length} file(s). Score: ${qualityScore}/100.`,
       explanation: `OpenAI static analyzer checked ${files.length} file(s) for code cleanliness, design patterns, and complexity.`,
       bugs,
       errors: [],

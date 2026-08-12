@@ -22,6 +22,10 @@ import { ReviewQueueProducer } from './infrastructure/queue/review-queue.produce
 import { ReviewQueueProcessor } from './infrastructure/queue/review-queue.processor';
 import { ReviewEventsGateway } from './infrastructure/websockets/review-events.gateway';
 import { ScoringService } from './application/scoring/scoring.service';
+import { TypeScriptAnalyzer } from './application/analyzers/typescript-analyzer';
+import { SecurityAnalyzer } from './application/analyzers/security-analyzer';
+import { ComplexityAnalyzer } from './application/analyzers/complexity-analyzer';
+import { FindingMergeService } from './application/analyzers/finding-merge.service';
 
 @Module({
   imports: [AuthModule, forwardRef(() => ReviewModule)],
@@ -32,6 +36,10 @@ import { ScoringService } from './application/scoring/scoring.service';
     AIResponseParser,
     AICacheService,
     ScoringService,
+    TypeScriptAnalyzer,
+    SecurityAnalyzer,
+    ComplexityAnalyzer,
+    FindingMergeService,
     GeminiService,
     OpenAIService,
     OllamaService,
@@ -53,6 +61,10 @@ import { ScoringService } from './application/scoring/scoring.service';
     AICacheService,
     AIResponseParser,
     ScoringService,
+    TypeScriptAnalyzer,
+    SecurityAnalyzer,
+    ComplexityAnalyzer,
+    FindingMergeService,
     AIFactoryService,
     AIProviderFactory,
     AnalyzeCodeReviewUseCase,
