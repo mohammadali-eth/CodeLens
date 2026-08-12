@@ -21,7 +21,7 @@ import { Severity } from '../../../review/domain/severity.enum';
 @Injectable()
 export class GeminiProvider implements IAIProvider {
   public readonly providerName = 'gemini';
-  public readonly defaultModel = process.env.GEMINI_MODEL || 'gemini-1.5-pro';
+  public readonly defaultModel = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
   private readonly logger = new Logger(GeminiProvider.name);
 
   constructor(

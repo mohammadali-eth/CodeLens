@@ -250,6 +250,37 @@ export class PrismaReviewRepository implements IReviewRepository {
   }
 
   async update(review: Review): Promise<Review> {
+    // 1. Persist file issues and improved code updates
+    for (const file of review.files) {
+      if (file.improvedCode) {
+        await this.prisma.reviewFile.update({
+          where: { id: file.id },
+          data: { improvedCode: file.improvedCode },
+        });
+      }
+
+      if (file.issues && file.issues.length > 0) {
+        // Clear existing issues for re-analyzed review file
+        await this.prisma.issue.deleteMany({
+          where: { reviewFileId: file.id },
+        });
+
+        // Bulk insert newly generated findings
+        await this.prisma.issue.createMany({
+          data: file.issues.map((issue) => ({
+            id: issue.id || randomUUID(),
+            reviewFileId: file.id,
+            line: issue.line,
+            severity: issue.severity,
+            category: issue.category || 'GENERAL',
+            message: issue.message,
+            suggestion: issue.suggestion,
+          })),
+        });
+      }
+    }
+
+    // 2. Update parent Review record
     const dbReview = await this.prisma.review.update({
       where: { id: review.id },
       data: {

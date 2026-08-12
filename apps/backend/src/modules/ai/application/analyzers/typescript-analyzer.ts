@@ -27,6 +27,16 @@ export class TypeScriptAnalyzer {
 
     for (const file of files) {
       const lang = (file.language || '').toUpperCase();
+      const ext = (file.filename.split('.').pop() || '').toLowerCase();
+
+      // Skip HTML, CSS, JSON, Markdown files from TypeScript AST compilation
+      if (
+        ['html', 'htm', 'css', 'json', 'yaml', 'yml', 'md', 'txt'].includes(ext) ||
+        ['HTML', 'CSS', 'JSON', 'MARKDOWN'].includes(lang)
+      ) {
+        continue;
+      }
+
       if (
         lang !== 'TYPESCRIPT' &&
         lang !== 'JAVASCRIPT' &&
